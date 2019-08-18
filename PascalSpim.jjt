@@ -1,0 +1,2787 @@
+// Pascal to SPIM parser. File for JavaCC
+/*options
+{
+  IGNORE_CASE = false;
+  //MULTI = true;
+}*/
+
+PARSER_BEGIN(PascalSpim)
+import java.io.*;
+import java.util.Vector;
+
+public class PascalSpim
+{
+	public static void main(String args[]) throws Exception
+	{
+		String file_in = "", file_out = "";
+		if(args.length != 2)
+		{
+			System.out.println("Error: incorrect number of parameters.");
+			System.out.println("The way to execute this program is:");
+			System.out.println("\"java PascalSpim <file_in> <file_out>\"");
+			return;
+		}
+		else
+		{
+			file_in = args[0];
+			file_out = args[1];
+		}
+		PascalSpim ps;
+		try
+		{
+			ps = new PascalSpim(new BufferedReader(new FileReader(file_in)));
+		}
+		catch(IOException e)
+		{
+			System.out.println("Error: file \"" + file_in + "\" cannot be read. Please check whether it exists.");
+			return;			
+		}
+		Program n = ps.programStart();
+		SymbolTable st = SymbolTable.getInstance();
+		if(st.getError())
+		{
+			System.out.println("Process finished with errors");
+		}
+		else
+		{
+			System.out.println("Process finished correctly.");
+			n.generateCode();
+			Code code = Code.getInstance();
+			boolean done = code.writeCode(file_out);
+			if(!done)
+			{
+				System.out.println("Error: file \"" + file_out + "\" could not be written.");
+			}
+		}
+	}
+	public static void error_skipto(int kind, ParseException e)
+	{
+		System.out.println(e.toString());
+		Token t;
+		do
+		{
+			t = getNextToken();
+		}while (t.kind != kind);
+	}
+	public static void error_skipto_before(int kind, ParseException e)
+	{
+		System.out.println(e.toString());
+		while (getToken(1).kind != kind)
+		{
+			getNextToken();
+		}
+	}
+	public static void printError(int line, int column, String text)
+	{
+		SymbolTable st = SymbolTable.getInstance();
+		st.setError(true);
+		System.out.println("Error at line " + line + ", column " + column + " : " + text);
+		System.out.println();
+	}
+	public static void printParseExc(ParseException pe)
+	{
+		SymbolTable st = SymbolTable.getInstance();
+		st.setError(true);
+		System.out.println(pe.toString().substring(16));
+	}
+}
+
+PARSER_END(PascalSpim)
+
+SKIP: //Whitespace and comments
+{
+    " "
+  | "\t"
+  | "\n"
+  | "\r"
+  | "(*" : INSIDE_COMMENT_1
+  | "{" : INSIDE_COMMENT_2
+}
+
+<INSIDE_COMMENT_1>
+SKIP:
+{
+    "*)" : DEFAULT
+  | <~[]>
+}
+
+<INSIDE_COMMENT_2>
+SKIP:
+{
+    "}" : DEFAULT
+  | <~[]>
+}
+
+TOKEN: //Keywords
+{
+    < PROGRAM : "program" >
+  | < BEGIN : "begin" >
+  | < END : "end" >
+  | < IF : "if" >
+  | < THEN : "then" >
+  | < ELSE : "else" >
+  | < WHILE : "while" >
+  | < CASE : "case" >
+  | < OF : "of" >
+  | < DO : "do" >
+  | < FUNCTION : "function" >
+  | < PROCEDURE : "procedure" >
+  | < VAR : "var" >
+  | < CONST : "const" >
+  | < TYPE : "type" >
+  | < TRUE : "true" >
+  | < FALSE : "false" >
+}
+
+TOKEN: //Special characters
+{
+    < EOS : ";" > /* End of sentence */
+  | < COMMA : "," >
+  | < COLON : ":" >
+  | < DDOT : ".." >
+  | < DOT : "." >
+  | < OP_BRAC : "[" >
+  | < CL_BRAC : "]" >
+  | < OP_PAR : "(" >
+  | < CL_PAR : ")" >
+}
+
+TOKEN: //Operators
+{
+    < PLUS : "+" >
+  | < MINUS : "-" >
+  | < MULT : "*" >
+  | < DIV : "div" >
+  | < MOD : "mod" >
+  | < DIVR : "/" >
+  | < AND : "and" >
+  | < OR : "or" >
+  | < NOT : "not" >
+  | < ASSIGN : ":=" >
+  | < LT : "<" >
+  | < GT : ">" >
+  | < EQ : "=" >
+  | < LET : "<=" >
+  | < GET : ">=" >
+  | < NE : "<>" >
+}
+
+TOKEN: //Data types
+{
+    < INTEGER : "integer" >
+  | < REAL : "real" >
+  | < BOOLEAN : "boolean" >
+  | < CHAR : "char" >
+//  | < STRING : "string" >
+  | < ARRAY : "array" >
+}
+
+TOKEN: //Constants and identifiers
+{
+    < #LETTER : ["a"-"z", "A"-"Z"] >
+  | < #DIGIT : ["0"-"9"] >
+  | < ID : <LETTER> (<LETTER>|<DIGIT>)* >
+  | < UNS_INT : (<DIGIT>)+ > //Unsigned integer
+  | < UNS_NUM : <UNS_INT> (<DOT> (<DIGIT>)+)? ("e" ( <PLUS> | <MINUS> )? <UNS_INT>)? > //Unsigned number
+  //| < STLIT : "'" (~["'"])* "'" > //String literal
+  | <STLIT : "'" (~["'", "\n", "\t", "\r"]) "'"> //Only one character
+}
+
+
+SKIP:
+{
+	<~[]>	
+	{
+		PascalSpim.printError(input_stream.getBeginLine(), input_stream.getBeginColumn(), "Lexical error: Character not parsed: " + image);
+	}
+}
+
+//**********************************************
+//*************START OF GRAMMAR*****************
+//**********************************************
+
+Program programStart() :
+{
+	String scope = "1";
+	Block b;
+	Token t = null;
+	boolean error = false;
+}
+{
+	try
+	{
+		<PROGRAM>
+	}
+	catch(ParseException e)
+	{
+		boolean synch = false;
+		printParseExc(e);
+		error = true;
+		while (!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case EOF:
+					synch = true;
+					break;
+				case PROGRAM:
+					synch = true;
+					getNextToken();
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	try
+	{
+		t = <ID>
+		<EOS>
+	}
+	catch(ParseException e)
+	{
+		error = true;
+		boolean synch = false;
+		printParseExc(e);
+		while (!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case EOF:
+					synch = true;
+					break;
+				case EOS:
+					synch = true;
+					getNextToken();
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	b = block(scope)
+	try
+	{
+		{if(b == null)
+			error = true;}
+		<DOT>
+	}
+	catch(ParseException e)
+	{
+		error = true;
+		boolean synch = false;
+		printParseExc(e);
+		while (!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case EOF:
+					synch = true;
+					break;
+				case DOT:
+					synch = true;
+					getNextToken();
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	{ 		if(error)
+				return null;
+			else
+				return new Program(t.image, b); }
+}
+
+Block block(String scope) :
+{
+	int i = 8;
+	BlockStatement s;
+	Statement aux;
+	SymbolTableEntry ste;
+	SymbolTable st = SymbolTable.getInstance();
+	Block b = new Block("1");
+	boolean error = false, retst = false;
+	int line = 0, column = 0;
+	FunctOrProc faux;
+	
+	//Predefined functions
+	
+	faux = new Procedure();
+	faux.setScope("1-0");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writeint");
+	ste = new SymbolTableEntry("writeint", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-0", new Variable(new IntegerType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-1");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writeintln");
+	ste = new SymbolTableEntry("writeintln", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-1", new Variable(new IntegerType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-2");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writereal");
+	ste = new SymbolTableEntry("writereal", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-2", new Variable(new RealType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-3");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writerealln");
+	ste = new SymbolTableEntry("writerealln", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-3", new Variable(new RealType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-4");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writechar");
+	ste = new SymbolTableEntry("writechar", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-4", new Variable(new CharType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-5");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writecharln");
+	ste = new SymbolTableEntry("writecharln", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-5", new Variable(new CharType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-6");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writeboolean");
+	ste = new SymbolTableEntry("writeboolean", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-6", new Variable(new BooleanType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+	
+	faux = new Procedure();
+	faux.setScope("1-7");
+	faux.setBlock(b);
+	faux.setSpecialFunc("writebooleanln");
+	ste = new SymbolTableEntry("writebooleanln", "1", faux);
+	st.addSymbol(ste);
+	b.addFunctOrProc(ste);
+	ste = new SymbolTableEntry("a", "1-7", new Variable(new BooleanType(), true, false, true));
+	st.addSymbol(ste);
+	faux.addParameter(ste);
+}
+{
+	try
+	{
+		( constBlock(scope)	)?
+		( typeBlock(scope) )?
+		( varBlock(scope) )?
+		(
+			ste = functionBlock(scope, i)
+			{
+				i++;
+				b.addFunctOrProc(ste);
+			}
+		|
+			ste = procedureBlock(scope, i)
+			{
+				i++;
+				b.addFunctOrProc(ste);
+			}
+		)*
+		{s = new BlockStatement(null);}
+		<BEGIN>   //I have decided that each statement has to have an ; at its end
+		(
+			try
+			{
+				aux = statement(scope, null)
+				{
+					if(retst)
+					{
+						retst = false;
+						error = true;
+						printError(line, column, "return statement is not placed at the last line of the function");
+					}
+					if(aux == null)
+						error = true;
+					else if(aux.hasReturnStatement() != null)
+					{
+						line = aux.getLine();
+						column = aux.getColumn();
+						retst = true;
+					}
+					s.addStatement(aux);
+				}
+				<EOS>
+			}
+			catch(ParseException e)
+			{
+				boolean synch = false;
+				printParseExc(e);
+				while (!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case END:
+						case EOF:
+							synch = true;
+							break;
+						case EOS:
+							synch = true;
+							getNextToken();
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+		)* 
+		{b.setStatements(s);}
+		<END>
+	}
+	catch(ParseException e)
+	{
+		boolean synch = false;
+		printParseExc(e);
+		while (!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case DOT:
+				case EOF:
+					synch = true;
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	{
+		if(error)
+			return null;
+		else
+			return b;}
+}
+
+Block funct_block(String scope, String fname) :
+{
+	int i = 0;
+	BlockStatement s;
+	Statement aux;
+	SymbolTableEntry ste;
+	Block b;
+	boolean retst = false, error = false;
+	int line = 0, column = 0;
+	Token tend;
+}
+{
+	{	b = new Block();	}
+	
+	( constBlock(scope)	)?
+	( typeBlock(scope) )?
+	( varBlock(scope) )?
+	{s = new BlockStatement("functOrProc");}
+	<BEGIN>   //I have decided that each statement has to have an ; at its end
+	(
+		try
+		{
+			aux = statement(scope, fname)
+			{
+				if(retst)
+				{
+					retst = false;
+					error = true;
+					printError(line, column, "return statement is not placed at the last line of the function");
+				}
+				if(aux == null)
+					error = true;
+				else if(aux.hasReturnStatement() != null)
+				{
+					line = aux.getLine();
+					column = aux.getColumn();
+					retst = true;
+				}
+				s.addStatement(aux);
+			}
+			<EOS>
+		}
+		catch(ParseException e)
+		{
+			boolean synch = false;
+			printParseExc(e);
+			while (!synch)
+			{
+				switch(getToken(1).kind)
+				{
+					case END:
+					case EOF:
+						synch = true;
+						break;
+					case EOS:
+						synch = true;
+						getNextToken();
+						break;
+					default:
+						getNextToken();
+				}
+			}
+		}
+	)* 
+	tend = <END>
+	{
+		if(fname != null)
+		{
+			if(s.hasReturnStatement() == null)
+			{
+				error = true;
+				printError(tend.beginLine, tend.beginColumn, "function \"" + fname + "\" has no return statement");
+			}
+		}
+		b.setStatements(s);
+	}
+	{	if(error)
+			return null;
+		else
+			return b;}
+}
+
+void constBlock(String scope) :
+{
+	boolean error = false;
+	Token t;
+	Constant c;
+	SymbolTable st = SymbolTable.getInstance();
+}
+{
+	<CONST>
+	(
+		{error = false;}
+		try
+		{
+			t = <ID>
+			{
+				if(!st.canBeOveridden(t.image, scope))
+				{
+					error = true;
+					printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" has been already defined in this scope");
+				}
+			}
+			<EQ>
+			c = constant(scope, null, null)
+			{
+				if(!error && (c != null))
+					st.addSymbol(new SymbolTableEntry(t.image, scope, c));
+			}
+			<EOS>
+		}
+		catch(ParseException e)
+		{
+			boolean synch = false;
+			printParseExc(e);
+			while (!synch)
+			{
+				switch(getToken(1).kind)
+				{
+					case TYPE:
+					case VAR:
+					case FUNCTION:
+					case PROCEDURE:
+					case BEGIN:
+					case EOF:
+						synch = true;
+						break;
+					case EOS:
+						synch = true;
+						getNextToken();
+						break;
+					default:
+						getNextToken();
+				}
+			}
+		}
+	)+
+}
+
+void typeBlock(String scope) :
+{
+	boolean error = false;
+	Token t;
+	Type tp;
+	SymbolTable st = SymbolTable.getInstance();
+}
+{
+	<TYPE>
+	(
+		{error = false;}
+		try
+		{
+			t = <ID>
+			{
+				if(!st.canBeOveridden(t.image, scope))
+				{
+					error = true;
+					printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" has been already defined in this scope");
+				}
+			}
+			<EQ>
+			tp = typeConst(scope)
+			{
+				if(!error && (tp != null))
+					st.addSymbol(new SymbolTableEntry(t.image, scope, tp));
+			}
+			<EOS>
+		}
+		catch(ParseException e)
+		{
+			boolean synch = false;
+			printParseExc(e);
+			while (!synch)
+			{
+				switch(getToken(1).kind)
+				{
+					case VAR:
+					case FUNCTION:
+					case PROCEDURE:
+					case BEGIN:
+					case EOF:
+						synch = true;
+						break;
+					case EOS:
+						synch = true;
+						getNextToken();
+						break;
+					default:
+						getNextToken();
+				}
+			}
+		}
+	)+
+}
+
+void varBlock(String scope) :
+{
+	Vector v = new Vector();
+	Variable var;
+	Token t;
+	Type tp;
+	SymbolTable st = SymbolTable.getInstance();
+	boolean isLocal = false;
+	if(scope.compareTo("1") != 0)
+		isLocal = true;
+}
+{
+	<VAR>
+	(
+		try
+		{
+			t = <ID> 			{v.add(t);}
+			(
+				<COMMA>
+				t = <ID>			{v.add(t);}
+			)*
+			<COLON>
+			tp = typeConst(scope)
+			{
+				for(int i = 0; i < v.size(); i++)
+				{
+					t = (Token) v.elementAt(i);
+					var = new Variable(tp, false, false, isLocal);
+					if(!st.canBeOveridden(t.image, scope))
+					{
+						printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" has been already defined in this scope");
+					}
+					else if(tp != null)
+						st.addSymbol(new SymbolTableEntry(t.image, scope, var));
+				}
+				v = new Vector();
+			}
+			<EOS>
+		}
+		catch(ParseException e)
+		{
+			boolean synch = false;
+			printParseExc(e);
+			while(!synch)
+			{
+				switch(getToken(1).kind)
+				{
+					case FUNCTION:
+					case PROCEDURE:
+					case BEGIN:
+					case EOF:
+						synch = true;
+						break;
+					case EOS:
+						synch = true;
+						getNextToken();
+						break;
+					default:
+						getNextToken();
+				}
+			}
+		}
+	)+
+}
+
+SymbolTableEntry functionBlock(String fscope, int fnumber) :
+{
+	boolean error = false;
+	IntWrapper errorInt = new IntWrapper();
+	Token t;
+	Type tp;
+	Function f;
+	Block b;
+	String scope = fscope + "-" + fnumber;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste = null;
+	Token tcolon;
+	errorInt.setValue(0);
+}
+{
+	<FUNCTION>
+	try
+	{
+		t = <ID>
+		{
+			f = new Function();
+			f.setScope(scope);
+			if(!st.canBeOveridden(t.image, fscope))
+			{
+				error = true;
+				printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" has been already defined in this scope");
+			}
+			
+		}
+		parameterList(f, scope, fscope, errorInt)
+		{
+			if(errorInt.getValue() == -1)
+				error = true;
+		}
+		tcolon = <COLON>
+		tp = typeConst(scope)
+		{
+			if(tp == null)
+				error = true;
+			else if(tp instanceof ArrayType)
+			{
+				error = true;
+				printError(tcolon.beginLine, tcolon.beginColumn, "a function cannot return an array");
+			}
+			else
+				f.setReturnType(tp);
+			if(!error)
+			{
+				ste = new SymbolTableEntry(t.image, fscope, f);
+				st.addSymbol(ste);
+			}
+		}
+		<EOS>
+		b = funct_block(scope, t.image)
+		{f.setBlock(b);}
+		<EOS>
+	}
+	catch(ParseException e)
+	{
+		boolean synch = false;
+		printParseExc(e);
+		while(!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case FUNCTION:
+				case PROCEDURE:
+				case BEGIN:
+				case EOF:
+					synch = true;
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	{
+		if(error)
+			return null;
+		else
+			return ste;
+	}
+}
+
+SymbolTableEntry procedureBlock(String fscope, int fnumber):
+{
+	boolean error = false;
+	Procedure p;
+	Token t;
+	Block b;
+	String scope = fscope + "-" + fnumber;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste = null;
+	IntWrapper errorInt = new IntWrapper();
+	errorInt.setValue(0);
+}
+{
+	<PROCEDURE>
+	try
+	{
+		t = <ID>
+		{
+			p = new Procedure();
+			p.setScope(scope);
+			if(!st.canBeOveridden(t.image, fscope))
+			{
+				error = true;
+				printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" has been already defined in this scope");
+			}
+		}
+		parameterList(p, scope, fscope, errorInt)
+		{
+			if(errorInt.getValue() == -1)
+				error = true;
+			if(!error)
+			{
+				ste = new SymbolTableEntry(t.image, fscope, p);
+				st.addSymbol(ste);
+			}
+		}
+		<EOS>
+		b = funct_block(scope, null)
+		{p.setBlock(b);}
+		<EOS>
+	}
+	catch(ParseException e)
+	{
+		boolean synch = false;
+		printParseExc(e);
+		while(!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case FUNCTION:
+				case PROCEDURE:
+				case BEGIN:
+				case EOF:
+					synch = true;
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	{
+		if(error)
+			return null;
+		else
+			return ste;
+	}
+}
+
+Constant constant(String scope, IntWrapper line, IntWrapper column) :
+{
+	boolean error = false;
+	Token t = null, sign = null;
+	Constant c = null;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste;
+	boolean identifier = false;
+}
+{
+	(
+		(
+			sign = <PLUS>
+		|
+			sign = <MINUS>
+		)?
+		(
+			t = <ID>
+			{	identifier = true;	
+				ste = st.getSymbol(t.image, scope);
+				if(ste == null)
+				{
+					error = true;
+					printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" is not defined");
+				}
+				else if(ste.getObject() instanceof Constant)
+					c = (Constant) ste.getObject();
+				else
+				{
+					error = true;
+					printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" does not represent a constant");
+				}
+			}
+		|
+			t = <UNS_NUM>
+			{ c = new RealConstant(); }
+		|
+			t = <UNS_INT>
+			{ c = new IntegerConstant(); }
+		)
+	|
+		t = <STLIT>
+		{
+			//if(t.image.length() == 3)
+				c = new CharConstant(); 
+			//else
+				//c = new StringConstant();
+		}
+	|
+		( t = <TRUE> | t = <FALSE> )	
+		{ c = new BooleanConstant(); }
+	)
+	{	
+		//it sets the values for the starting line and column
+		if(line != null)
+		{
+			if(sign != null)
+			{
+				line.setValue(sign.beginLine);
+				column.setValue(sign.beginColumn);
+			}
+			else
+			{
+				line.setValue(t.beginLine);
+				column.setValue(t.beginColumn);
+			}
+		}
+		if(!identifier && !error)
+		{	
+			if(sign == null) 
+				c.storePascalValue(t.beginLine, t.beginColumn, t.image);
+			else
+				c.storePascalValue(sign.beginLine, sign.beginColumn, sign.image + t.image);
+		}
+	  	if(error)
+			return null;
+		else
+			return c;
+	}
+}
+
+Constant uns_constant(String scope) :
+{
+	Token t = null;
+	Constant c = null;
+}
+{
+	(
+		t = <UNS_NUM>
+		{ c = new RealConstant(); }
+	|
+		t = <UNS_INT>
+		{ c = new IntegerConstant(); }
+	|
+		t = <STLIT>
+		{
+			//if(t.image.length() == 3)
+				c = new CharConstant(); 
+			//else
+				//c = new StringConstant();
+		}
+	|
+		( t = <TRUE> | t = <FALSE> )	
+		{ c = new BooleanConstant(); }
+	)
+	{
+		c.storePascalValue(t.beginLine, t.beginColumn, t.image);
+		return c;
+	}
+}
+
+Type typeConst(String scope) :
+{
+	boolean error = false, currentError = false;
+	Type tp = null, tp2;
+	Token t = null, sign = null, t2 = null, auxTok = null;
+	int min = 0, max = 0, i = 0;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste = null;
+}
+{
+	(
+		<INTEGER> { tp = new IntegerType(); }
+	|
+		<REAL> { tp = new RealType(); }
+	|
+		<BOOLEAN> { tp = new BooleanType(); }
+	|
+		<CHAR> { tp = new CharType(); }
+	|
+		t = <ID>
+		{
+			ste = st.getSymbol(t.image, scope);
+			if(ste == null)
+			{
+				error = true;
+				printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" is not defined");
+			}
+			else if(ste.getObject() instanceof Type)
+				tp = (Type) ste.getObject();
+			else
+			{
+				error = true;
+				printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" does not represent a type");
+			}
+		}
+	/*|
+		<STRING>
+		( 
+			<OP_BRAC>
+			(
+				sign = <PLUS>
+			|
+				sign = <MINUS>
+			)? 
+			t=<UNS_INT>
+			<CL_BRAC>
+		)?
+		{	
+			if(t != null) 
+			{
+				max = 255;
+				if(sign != null)
+					auxTok = sign;
+				else
+					auxTok = t;
+				try
+				{
+					if(sign != null)
+						max = Integer.parseInt(sign.image + t.image);
+					else
+						max = Integer.parseInt(t.image);
+				}
+				catch(NumberFormatException e)
+				{
+					error = true;
+					printError(auxTok.beginLine, auxTok.beginColumn, "number exceeds INTEGER range");
+				}
+				if(max <= 0)
+				{
+					error = true;
+					printError(auxTok.beginLine, auxTok.beginColumn, "invalid string length");
+				}
+				if(!error)
+					tp = new StringType(max);
+			}
+			else
+				tp = new StringType(); 
+		}*/
+	|
+		<ARRAY> 
+		t2 = <OP_BRAC>
+		{tp = new ArrayType();}
+		
+		( sign = <PLUS>| sign = <MINUS>)? 
+		t = <UNS_INT>
+		
+		{
+			if(sign != null)
+				auxTok = sign;
+			else
+				auxTok = t;
+			try
+			{
+				if(sign == null) 
+					min = Integer.parseInt(t.image);
+				else
+					min = Integer.parseInt(sign.image + t.image);
+			}
+			catch(NumberFormatException e)
+			{
+				error = true;
+				printError(auxTok.beginLine, auxTok.beginColumn, "number exceeds INTEGER range");
+			}
+			sign = null;
+		}
+		
+		<DDOT>
+		( sign = <PLUS>| sign = <MINUS>)? 
+		t = <UNS_INT>
+		{	
+			if(sign != null)
+				auxTok = sign;
+			else
+				auxTok = t;
+			try
+			{	
+				if(sign == null) 
+					max = Integer.parseInt(t.image);
+				else
+					max = Integer.parseInt(sign.image + t.image);
+			}
+			catch(NumberFormatException e)
+			{
+				error = true;
+				printError(auxTok.beginLine, auxTok.beginColumn, "number exceeds INTEGER range");
+			}
+			sign = null;
+		}
+		
+		{
+			if(!error)
+			{
+				if(max >= min)
+					((ArrayType) tp).setDimensions(i, min, max);
+				else
+				{
+					error = true;
+					printError(t2.beginLine, t2.beginColumn, "lower bound greater than upper bound");
+				}
+				i++;
+			}
+		}
+		
+		(
+			t2 =<COMMA> 
+			{currentError = false;}
+			( sign = <PLUS>| sign = <MINUS>)? 
+			t = <UNS_INT>
+		
+			{	
+				if(sign != null)
+					auxTok = sign;
+				else
+					auxTok = t;
+				try
+				{
+					if(sign == null) 
+						min = Integer.parseInt(t.image);
+					else
+						min = Integer.parseInt(sign.image + t.image);
+				}
+				catch(NumberFormatException e)
+				{
+					currentError = true;
+					error = true;
+					printError(auxTok.beginLine, auxTok.beginColumn, "number exceeds INTEGER range");
+				}
+				sign = null;
+			}
+		
+			<DDOT>
+			( sign = <PLUS>| sign = <MINUS>)? 
+			t = <UNS_INT>
+			{
+				if(sign != null)
+					auxTok = sign;
+				else
+					auxTok = t;
+				try
+				{	
+					if(sign == null) 
+						max = Integer.parseInt(t.image);
+					else
+						max = Integer.parseInt(sign.image + t.image);
+				}
+				catch(NumberFormatException e)
+				{
+					currentError = true;
+					error = true;
+					printError(auxTok.beginLine, auxTok.beginColumn, "number exceeds INTEGER range");
+				}
+				sign = null;
+			}
+		
+			{
+				if(!currentError)
+				{
+					if(max >= min)
+						((ArrayType) tp).setDimensions(i, min, max);
+					else
+					{
+						error = true;
+						printError(t2.beginLine, t2.beginColumn, "lower bound greater than upper bound");
+					}
+					i++;
+				}
+			}
+		)*
+		<CL_BRAC> <OF> 
+		tp2 = typeConst(scope)
+		{	
+			if(tp2 == null)
+				error = true;
+			if(!error)
+				((ArrayType) tp).setElsType(tp2);
+		}
+	)
+	{
+		if(!error)
+			return tp;
+		else
+			return null;
+	}
+}
+
+void parameterList(FunctOrProc funcNode, String scope, String fscope, IntWrapper errorInt) :
+{}
+{
+	(
+		<OP_PAR>
+		try
+		{
+			subParList(funcNode, scope, fscope, errorInt)
+			( <EOS> subParList(funcNode, scope, fscope, errorInt) )*
+			<CL_PAR>
+		}
+		catch(ParseException e)
+		{
+			errorInt.setValue(-1);
+			boolean synch = false;
+			printParseExc(e);
+			while(!synch)
+			{
+				switch(getToken(1).kind)
+				{
+					case CL_PAR:
+						synch = true;
+						getNextToken();
+						break;
+					case EOF:
+						synch = true;
+						break;
+					default:
+						getNextToken();
+				}
+			}
+		}
+	)?
+}
+
+void subParList(FunctOrProc funcNode, String scope, String fscope, IntWrapper errorInt) :
+{
+	Token t;
+	boolean isOutput = false;
+	Variable var;
+	Vector v = new Vector();
+	Type tp;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste;
+}
+{
+	try
+	{
+		//(<VAR> { isOutput = true; }  )?
+		t = <ID>			{v.add(t);}
+		(
+			<COMMA>
+			t = <ID>		{v.add(t);}
+		)*
+		<COLON>
+		tp = typeConst(fscope)
+		{
+			if(tp == null)
+				errorInt.setValue(-1);
+			else
+			{
+				for(int i = 0; i < v.size(); i++)
+				{
+					t = (Token) v.elementAt(i);
+					if(!st.canBeOveridden(t.image, scope))
+					{
+						printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" has been already defined in this scope");
+					}
+					else
+					{
+						var = new Variable(tp, true, isOutput, true);
+						ste = new SymbolTableEntry(t.image, scope, var);
+						st.addSymbol(ste);
+						funcNode.addParameter(ste);
+					}
+				}
+			}
+			v = new Vector();
+		}
+	}
+	catch(ParseException e)
+	{
+		errorInt.setValue(-1);
+		boolean synch = false;
+		printParseExc(e);
+		while(!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case CL_PAR:
+				case EOS:
+				case EOF:
+					synch = true;
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+}
+
+Expression expression(String scope) :
+{
+	boolean error = false;
+	Token t;
+	SimpleExpression se, prevse;
+	Expression e;
+	Operator op;
+	Type prevType = null;
+}
+{
+	se = simpExpression(scope)
+	{
+		if(se == null)
+			error = true;
+		else
+			prevType = se.getType();
+		e = new Expression(se);
+	}
+	(
+		{op = new CompareOperator();}
+		(
+			t = <EQ> 
+		|
+			t = <LT> 
+		|
+			t = <GT> 
+		|
+			t = <NE> 
+		|
+			t = <LET>
+		|
+			t = <GET>
+		)
+		{
+			op.setKind(t.image);
+		}
+		se = simpExpression(scope)
+		{
+			if(!error)
+			{
+				if(se == null)
+					error = true;
+				else if(prevType != null)
+				{
+					if(op.resultType(prevType, se.getType()) == null)
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "operator \"" + t.image + "\" cannot be applied between " + prevType + " and " + se.getType());
+					}
+					prevType = op.resultType(prevType, se.getType());
+					e.addOtherExpr(op, se);
+				}
+			}
+		}
+	)*
+	{
+		if(error)
+			return null;
+		else
+			return e;
+	}
+}
+
+SimpleExpression simpExpression(String scope) :
+{
+	boolean error = false;
+	Token t = null;
+	Operator op = null;
+	Term te, prevte;
+	SimpleExpression se;
+	Type prevType = null;
+}
+{
+	{op = new NormalArithOperator();}
+	(
+		t = <PLUS> 
+	|
+		t = <MINUS>
+	)?
+	{
+		if(t == null)
+			op = null;
+		else
+			op.setKind(t.image);
+	}
+	te = term(scope)
+	{
+		if(te == null)
+			error = true;
+		else if(op != null)
+		{
+			if(op.resultType(te.getType()) == null)
+			{
+				error = true;
+				printError(t.beginLine, t.beginColumn, "operator \"" + t.image + "\" cannot be applied to " + te.getType());
+			}
+			else
+				prevType = op.resultType(te.getType());
+		}
+		else
+			prevType = te.getType();
+		se = new SimpleExpression(op, te);
+	}
+	(
+		(
+			t = <PLUS> 	{op = new NormalArithOperator();}
+		|
+			t = <MINUS>	{op = new NormalArithOperator();}
+		|
+			t = <OR> 	{op = new LogicalOperator();}
+		)
+		{
+			op.setKind(t.image);
+		}
+		te = term(scope)
+		{
+			if(!error)
+			{
+				if(te == null)
+					error = true;
+				else if(prevType != null)
+				{
+					if(op.resultType(prevType, te.getType()) == null)
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "operator \"" + t.image + "\" cannot be applied between " + prevType + " and " + te.getType());
+					}
+					prevType = op.resultType(prevType, te.getType());
+					se.addOtherTerm(op, te);
+				}
+			}
+		}
+	)*
+	{
+		if(error)
+			return null;
+		else
+			return se;
+	}
+}
+
+Term term(String scope) :
+{
+	boolean error = false;
+	Term tm;
+	Token t;
+	Operator op;
+	Factor f, prevf;
+	Type prevType = null;
+}
+{
+	f = factor(scope)
+	{
+		if(f == null)
+			error = true;
+		else
+			prevType = f.getType();
+		tm = new Term(f);
+	}
+	(
+		(
+			t = <MULT> {op = new NormalArithOperator();}
+		|
+			t = <DIVR> {op = new RealDivisionOperator();}
+		|
+			t = <DIV> {op = new IntegerArithOperator();}
+		|
+			t = <MOD> {op = new IntegerArithOperator();}
+		|
+			t = <AND> {op = new LogicalOperator();}
+		)
+		{
+			op.setKind(t.image);
+		}
+		f = factor(scope)
+		{
+			if(!error)
+			{
+				if(f == null)
+					error = true;
+				else if(prevType != null)
+				{
+					if(op.resultType(prevType, f.getType()) == null)
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "operator \"" + t.image + "\" cannot be applied between " + prevType + " and " + f.getType());
+					}
+					prevType = op.resultType(prevType, f.getType());
+					tm.addOtherFactor(op, f);
+				}
+			}
+		}
+	)*
+	{
+		if(error)
+			return null;
+		else
+			return tm;}
+}
+
+Factor factor(String scope) :
+{
+	boolean error = false;
+	FactorObject fo = null;
+	int i = 0;
+	Token t, t2, idtok;
+	Factor f = null;
+	Expression e = null;
+	FunctionCall fc = null;
+	VariableApparition v = null, vAux = null;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste = null;
+	Type type;
+	int dims = 0;
+}
+{
+	(
+		fo = uns_constant(scope)
+	|
+		t = <ID> //function identifier or variable
+		{
+			idtok = t;
+			ste = st.getSymbol(t.image, scope);
+			if(ste == null)
+			{
+				error = true;
+				printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" is not defined");
+			}
+		}
+		(
+			{
+				if(!error)
+				{
+					if(ste.getObject() instanceof Variable)
+					{
+						v = new VariableApparition(ste);
+					}
+					else
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" does not represent a variable");
+					}
+				}
+			}
+			(
+				t = <OP_BRAC> //for variables
+				{
+					i = 0;
+					if(!error)
+					{
+						type = v.getType();
+						if(!type.isIndexable())
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, "this variable cannot be indexed");
+						}
+						else
+						{
+							if(type instanceof ArrayType)
+							{
+								ArrayType at = (ArrayType) type;
+								dims = at.getNumberOfDimensions();
+							}
+							/*else if(type instanceof StringType)
+							{
+								dims = 1;
+							}*/
+							v = new IndexedVariable(v);
+						}
+					}
+				}
+				try
+				{
+					{e = null;}
+					e = expression(scope)
+					{if (e == null)
+						error = true;}
+				}
+				catch(ParseException exc)
+				{
+					error = true;
+					boolean synch = false;
+					printParseExc(exc);
+					while(!synch)
+					{
+						switch(getToken(1).kind)
+						{
+							case COMMA:
+							case CL_BRAC:
+							case EOS:
+							case END:
+							case EOF:
+								synch = true;
+								break;
+							default:
+								getNextToken();
+						}
+					}
+				}
+				{
+					if(e != null && !error)
+					{
+						if(i < dims)
+						{
+							Type intType = new IntegerType();
+							if(intType.isCompatibleWith(e.getType()))
+							{
+								/*
+								Controlling if the indices are out of bounds will make necessary evaluation
+								of expressions at compile time.
+								*/
+								((IndexedVariable) v).setIndex(i, e);
+								i++;
+							}
+							else
+							{
+								error = true;
+								printError(t.beginLine, t.beginColumn, "this expression is not of type integer");
+							}
+						}
+						else
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, "too many indexes for this bracket");
+						}
+					}
+				}
+				(
+					t2 = <COMMA>
+					try
+					{
+						{e = null;}
+						e = expression(scope)
+						{if (e == null)
+							error = true;}
+					}
+					catch(ParseException exc)
+					{
+						error = true;
+						boolean synch = false;
+						printParseExc(exc);
+						while(!synch)
+						{
+							switch(getToken(1).kind)
+							{
+								case COMMA:
+								case CL_BRAC:
+								case EOS:
+								case END:
+								case EOF:
+									synch = true;
+									break;
+								default:
+									getNextToken();
+							}
+						}
+					}
+					{
+						if(e != null && !error)
+						{
+							if(i < dims)
+							{
+								Type intType = new IntegerType();
+								if(intType.isCompatibleWith(e.getType()))
+								{
+									/*
+									Controlling if the indices are out of bounds will make necessary evaluation
+									of expressions at compile time.
+									*/
+									((IndexedVariable) v).setIndex(i, e);
+									i++;
+								}
+								else
+								{
+									error = true;
+									printError(t2.beginLine, t2.beginColumn, "this expression is not of type integer");
+								}
+							}
+							else
+							{
+								error = true;
+								printError(t.beginLine, t.beginColumn, "too many indexes for this bracket");
+							}
+						}
+					}
+				)*
+				<CL_BRAC>
+				{
+					if(!error && (i < dims))
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "not enough indexes for this bracket");
+					}
+				}
+			)+
+			{
+				if(v.getType() instanceof ArrayType)
+				{
+					error = true;
+					printError(idtok.beginLine, idtok.beginColumn, "array not completely indexed");
+				}
+				if(!error)
+					fo = v;
+				else
+					fo = null;
+			}
+		|
+			<OP_PAR> //for functions
+			{ 
+				if(!error)
+				{
+					if(ste.getObject() instanceof FunctOrProc)
+						fc = new FunctionCall(ste);
+					else
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "this is not a callable object");
+					}
+				}
+			}
+			try
+			{
+				{e = null;}
+				e = expression(scope)
+				{if (e == null)
+					error = true;}
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case COMMA:
+						case CL_PAR:
+						case EOS:
+						case END:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			{
+				if(!error)
+				{
+					fc.setParameter(i, e);
+					i++;
+				}
+			}
+			(
+				<COMMA>
+				try
+				{
+					{e = null;}
+					e = expression(scope)
+					{if (e == null)
+						error = true;}
+				}
+				catch(ParseException exc)
+				{
+					error = true;
+					boolean synch = false;
+					printParseExc(exc);
+					while(!synch)
+					{
+						switch(getToken(1).kind)
+						{
+							case COMMA:
+							case CL_PAR:
+							case EOS:
+							case END:
+							case EOF:
+								synch = true;
+								break;
+							default:
+								getNextToken();
+						}
+					}
+				}
+				{
+					if(!error)
+					{
+						fc.setParameter(i, e);
+						i++;
+					}
+				}
+			)*
+			<CL_PAR>
+			{
+				if(!error)
+				{
+					if(!fc.isCorrect())
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, fc.toString() + " cannot be applied to " + fc.getFunctionString());
+					}
+					else if(ste.getObject() instanceof Procedure)
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "\"" + t.image + "\" is a procedure: procedures cannot be called here");
+					}
+					else
+						fo = fc;
+				}
+			}
+		)?
+		{
+			if(!error && fo == null)
+			{
+				if(ste.getObject() instanceof Variable)  
+					fo = new VariableApparition(ste);
+				else if(ste.getObject() instanceof FunctOrProc)
+				{
+					FunctionCall fcAux = new FunctionCall(ste);
+					if(!fcAux.isCorrect())
+					{
+						error = true;
+						printError(idtok.beginLine, idtok.beginColumn, fcAux.toString() + " cannot be applied to " + fcAux.getFunctionString());
+					}
+					if(ste.getObject() instanceof Procedure)
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "\"" + t.image + "\" is a procedure : procedures cannot be called here");
+					}
+					if(!error)
+						fo = fcAux;
+				}
+				else if(ste.getObject() instanceof Constant)
+					fo = (FactorObject) ste.getObject();
+				else
+				{
+					error = true;
+					printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" does not represent either a function or a variable");
+				}
+			}
+		}
+	|
+		<OP_PAR>
+		try
+		{
+			fo = expression(scope)
+		}
+		catch(ParseException exc)
+		{
+			boolean synch = false;
+			printParseExc(exc);
+			while(!synch)
+			{
+				switch(getToken(1).kind)
+				{
+					case CL_PAR:
+					case EOS:
+					case END:
+					case EOF:
+						synch = true;
+						break;
+					default:
+						getNextToken();
+				}
+			}
+		} 
+		<CL_PAR>
+	|
+		<NOT> f = factor(scope)
+		{
+			if(f != null)
+			{
+				if(f.getPrevOperator() != null)
+					f.setPrevOperator(null); //two not operations become nothing
+				else
+				{
+					Operator op = new LogicalOperator();
+					op.setKind("not");
+					f.setPrevOperator(op);
+				}
+			}
+		}
+	)
+	{
+		if(f == null && fo != null && !error)
+		{
+			f = new Factor();
+			f.setFactor(fo);
+		}
+		return f;
+	}
+}
+
+Statement statement(String scope, String fname) :
+{
+	boolean error = false;
+	Token t, t2, idtok;
+	FunctionCall fc = null;
+	Statement s = null, aux = null;
+	VariableApparition v = null;
+	Expression e = null;
+	SymbolTable st = SymbolTable.getInstance();
+	SymbolTableEntry ste = null;
+	int i = 0, dims = 0;
+	Type exprType = null, type = null;
+	boolean retst;
+}
+{
+	try
+	{
+		(
+			t = <ID> //function identifier or variable
+			{idtok = t;}
+			{
+				ste = st.getSymbol(t.image, scope);
+				if(ste == null)
+				{
+					error = true;
+					printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" is not defined");
+				}
+			}
+
+			(
+				<OP_PAR> //procedure call
+				{ 
+					if(!error)
+					{
+						if(ste.getObject() instanceof FunctOrProc)
+						{
+							fc = new FunctionCall(ste);
+							s = new FunctionCallStatement(fc);
+						}
+						else
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, "this is not a callable object");
+						}
+					}
+				}
+				try
+				{
+					{e = null;}
+					e = expression(scope)
+					{if(e == null)
+						error = true;}
+				}
+				catch(ParseException exc)
+				{
+					error = true;
+					boolean synch = false;
+					printParseExc(exc);
+					while(!synch)
+					{
+						switch(getToken(1).kind)
+						{
+							case COMMA:
+							case CL_PAR:
+							case EOS:
+							case END:
+							case EOF:
+								synch = true;
+								break;
+							default:
+								getNextToken();
+						}
+					}
+				}
+				{
+					if(!error)
+					{
+						fc.setParameter(i, e);
+						i++;
+					}
+				}
+				( 
+					<COMMA>
+					try
+					{
+						{e = null;}
+						e = expression(scope)
+						{if(e == null)
+							error = true;}
+					}
+					catch(ParseException exc)
+					{
+						error = true;
+						boolean synch = false;
+						printParseExc(exc);
+						while(!synch)
+						{
+							switch(getToken(1).kind)
+							{
+								case COMMA:
+								case CL_PAR:
+								case EOS:
+								case END:
+								case EOF:
+									synch = true;
+									break;
+								default:
+									getNextToken();
+							}
+						}
+					}
+					{
+						if(!error)
+						{
+							fc.setParameter(i, e);
+							i++;
+						}
+					}
+				)*
+				<CL_PAR>
+				{
+					if(!error)
+					{
+						if(!fc.isCorrect())
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, fc.toString() + " cannot be applied to " + fc.getFunctionString());
+						}
+						if(ste.getObject() instanceof Function)
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, "\"" + t.image + "\" is a function, but its return value it is not used");
+						}
+					}
+				}
+			|
+				{
+					v = null;
+					if(!error)
+					{
+						if(ste.getObject() instanceof Variable)
+						{
+							v = new VariableApparition(ste);
+						}
+						else if(!(ste.getObject() instanceof Function))
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" does not represent a variable");
+						}
+					}
+				}
+				(								//for variables
+					t = <OP_BRAC>
+					{
+						i = 0;
+						if(!error)
+						{
+							type = v.getType();
+							if(!type.isIndexable())
+							{
+								error = true;
+								printError(t.beginLine, t.beginColumn, "this variable cannot be indexed");
+							}
+							else
+							{
+								if(type instanceof ArrayType)
+								{
+									ArrayType at = (ArrayType) type;
+									dims = at.getNumberOfDimensions();
+								}
+								/*else if(type instanceof StringType)
+								{
+									dims = 1;
+								}*/
+								v = new IndexedVariable(v);
+							}
+						}
+					}
+					try
+					{
+						{e = null;}
+						e = expression(scope)
+						{if(e == null)
+							error = true;}
+					}
+					catch(ParseException exc)
+					{
+						error = true;
+						boolean synch = false;
+						printParseExc(exc);
+						while(!synch)
+						{
+							switch(getToken(1).kind)
+							{
+								case COMMA:
+								case CL_BRAC:
+								case EOS:
+								case END:
+								case EOF:
+									synch = true;
+									break;
+								default:
+									getNextToken();
+							}
+						}
+					}
+					{
+						if(e != null && !error)
+						{
+							if(i < dims)
+							{
+								Type intType = new IntegerType();
+								if(intType.isCompatibleWith(e.getType()))
+								{
+									/*
+									Controlling if the indices are out of bounds will make necessary evaluation
+									of expressions at compile time.
+									*/
+									((IndexedVariable) v).setIndex(i, e);
+									i++;
+								}
+								else
+								{
+									error = true;
+									printError(t.beginLine, t.beginColumn, "this expression is not of type integer");
+								}
+							}
+							else
+							{
+								error = true;
+								printError(t.beginLine, t.beginColumn, "too many indexes for this bracket");
+							}
+						}
+					}
+					(
+						t2 = <COMMA>
+						try
+						{
+							{e = null;}
+							e = expression(scope)
+							{if(e == null)
+								error = true;}
+						}
+						catch(ParseException exc)
+						{
+							error = true;
+							boolean synch = false;
+							printParseExc(exc);
+							while(!synch)
+							{
+								switch(getToken(1).kind)
+								{
+									case COMMA:
+									case CL_BRAC:
+									case EOS:
+									case END:
+									case EOF:
+										synch = true;
+										break;
+									default:
+										getNextToken();
+								}
+							}
+						}
+						{
+							if(e != null && !error)
+							{
+								if(i < dims)
+								{
+									Type intType = new IntegerType();
+									if(intType.isCompatibleWith(e.getType()))
+									{
+										/*
+										Controlling if the indices are out of bounds will make necessary evaluation
+										of expressions at compile time.
+										*/
+										((IndexedVariable) v).setIndex(i, e);
+										i++;
+									}
+									else
+									{
+										error = true;
+										printError(t2.beginLine, t2.beginColumn, "this expression is not of type integer");
+									}
+								}
+								else
+								{
+									error = true;
+									printError(t.beginLine, t.beginColumn, "too many indexes for this bracket");
+								}
+							}
+						}
+					)*
+					<CL_BRAC>
+					{
+						if(!error && (i < dims))
+						{
+							error = true;
+							printError(t.beginLine, t.beginColumn, "not enough indexes for this bracket");
+						}
+					}
+				)*
+				<ASSIGN>
+				try
+				{
+					{e = null;}
+					e = expression(scope)
+					{if(e == null)
+						error = true;}
+				}
+				catch(ParseException exc)
+				{
+					error = true;
+					boolean synch = false;
+					printParseExc(exc);
+					while(!synch)
+					{
+						switch(getToken(1).kind)
+						{
+							case EOS:
+							case END:
+							case EOF:
+								synch = true;
+								break;
+							default:
+								getNextToken();
+						}
+					}
+				}
+				{
+					if(!error)
+					{
+						if(v == null)
+						{
+							if(((Function) ste.getObject()).getReturnType().isCompatibleWith(e.getType()))
+							{
+								if(fname == null)
+								{
+									error = true;
+									printError(idtok.beginLine, idtok.beginColumn, "return statement without a function");
+								}
+								else if(ste.getName().compareTo(fname) == 0)
+								{
+									s = new AssignStatement(ste, e);
+									s.setLine(idtok.beginLine);
+									s.setColumn(idtok.beginColumn);
+								}
+								else
+								{
+									error = true;
+									printError(idtok.beginLine, idtok.beginColumn, "return statement for function \"" + ste.getName() + "\", within function \"" + fname + "\"");
+								}
+							}
+							else
+							{
+								error = true;
+								printError(idtok.beginLine, idtok.beginColumn, "incompatible types : at assignment\nfound : " + e.getType() + "\nrequired : " + ((Function) ste.getObject()).getReturnType());
+							}
+						}
+						else
+						{
+							if(v.getType() instanceof ArrayType)
+							{
+								error = true;
+								printError(idtok.beginLine, idtok.beginColumn, "only one position of an array can be assigned at a time");
+							}
+							if(v.getType().isCompatibleWith(e.getType()))
+								s = new AssignStatement(v, e);
+							else
+							{
+								error = true;
+								printError(idtok.beginLine, idtok.beginColumn, "incompatible types : at assignment\nfound : " + e.getType() + "\nrequired : " + v.getType());
+							}
+						}
+					}
+				}
+			)?
+			{
+				if(s == null && !error)
+				{
+					if(ste.getObject() instanceof Procedure)  
+					{
+						FunctionCall fcAux = new FunctionCall(ste);
+						if(fcAux.isCorrect())
+							s = new FunctionCallStatement(fcAux);
+						else
+						{
+							error = true;
+							printError(idtok.beginLine, idtok.beginColumn, fcAux.toString() + " cannot be applied to " + fcAux.getFunctionString());
+						}
+					}
+					else if(ste.getObject() instanceof Function)
+					{
+						FunctionCall fcAux = new FunctionCall(ste);
+						if(!fcAux.isCorrect())
+						{
+							error = true;
+							printError(idtok.beginLine, idtok.beginColumn, fcAux.toString() + " cannot be applied to " + fcAux.getFunctionString());
+						}
+						error = true;
+						printError(idtok.beginLine, idtok.beginColumn, "\"" + t.image + "\" is a function, but its return value it is not used");
+					}
+					else
+					{
+						error = true;
+						printError(t.beginLine, t.beginColumn, "identifier \"" + t.image + "\" does not represent a procedure");
+					}
+				}
+			}
+		|
+			<BEGIN>
+			{ 
+				s = new BlockStatement();
+				retst = false;
+				int line = 0, column = 0;
+			}
+			
+			(
+				try
+				{
+					aux = statement(scope, fname)
+					{
+						if(retst)
+						{
+							retst = false;
+							error = true;
+							printError(line, column, "return statement is not placed at the last line of the function");
+						}
+						if(aux == null)
+							error = true;
+						else if(aux instanceof AssignStatement)
+						{
+							SymbolTableEntry steaux =((AssignStatement)aux).getFunctName();
+							if(steaux != null)
+							{
+								line = aux.getLine();
+								column = aux.getColumn();
+								retst = true;
+							}
+						}
+						((BlockStatement) s).addStatement(aux);
+					}
+					<EOS>
+				}
+				catch(ParseException exc)
+				{
+					boolean synch = false;
+					printParseExc(exc);
+					while (!synch)
+					{
+						switch(getToken(1).kind)
+						{
+							case END:
+							case EOF:
+								synch = true;
+								break;
+							case EOS:
+								synch = true;
+								getNextToken();
+								break;
+							default:
+								getNextToken();
+						}
+					}
+				}
+			)*
+			<END>
+		|
+			t = <IF>
+			try
+			{
+				{e = null;}
+				e = expression(scope)
+				{if (e == null)
+					error = true;}
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case THEN:
+						case BEGIN:
+						case EOS:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			{
+				if(e != null)
+				{
+					if(!(e.getType() instanceof BooleanType))
+					{
+						error = true;
+						printError(t.next.beginLine, t.next.beginColumn, "incompatible types : at IF expression\nfound : " + e.getType() + "\nrequired : boolean");
+					}
+				}
+			}
+			try
+			{
+				<THEN>
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case THEN:
+							synch = true;
+							getNextToken();
+							break;
+						case BEGIN:
+						case EOS:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			aux = statement(scope, fname)
+			{
+				if(aux == null)
+					error = true;
+				else if(aux.hasReturnStatement() != null)
+				{
+					error = true;
+					printError(aux.hasReturnStatement().getLine(), aux.hasReturnStatement().getColumn(), "return statement is not placed at the last line of the function");
+				}
+				s = new IfStatement(e, aux);
+			}
+			(	LOOKAHEAD(2)
+				<EOS>
+				<ELSE>
+				aux = statement(scope, fname)
+				{
+					if(aux == null)
+						error = true;
+					else if(aux.hasReturnStatement() != null)
+					{
+						error = true;
+						printError(aux.hasReturnStatement().getLine(), aux.hasReturnStatement().getColumn(), "return statement is not placed at the last line of the function");
+					}
+					((IfStatement) s).setBlockElse(aux);
+				}
+			)?
+		|
+			t = <CASE>
+			try
+			{
+				{e = null;}
+				e = expression(scope)
+				{if (e == null)
+					error = true;}
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case OF:
+						case BEGIN:
+						case EOS:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			try
+			{
+				<OF>
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case OF:
+							synch = true;
+							getNextToken();
+							break;
+						case PLUS:
+						case MINUS:
+						case UNS_NUM:
+						case UNS_INT:
+						case STLIT:
+						case ID:
+						case ELSE:
+						case END:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			{
+				if(e != null)
+				{
+					exprType = e.getType();
+					if((e.getType() instanceof ArrayType) ||
+						//(e.getType() instanceof StringType) ||
+						(e.getType() instanceof RealType))
+					{
+						error = true;
+						printError(t.next.beginLine, t.next.beginColumn, "type " + e.getType() + " cannot be used in a case statement");
+					}
+				}
+				s = new CaseStatement(e);
+			}
+			(
+				caseSequence((CaseStatement)s, exprType, scope, fname)
+				( caseSequence((CaseStatement)s, exprType, scope, fname) )*
+				(
+					<ELSE>
+					aux = statement(scope, fname)
+					{
+						if(aux == null)
+							error = true;
+						((CaseStatement) s).addCaseBlock(null, aux);
+					}
+					<EOS>
+				)?
+			|
+				<ELSE>
+				aux = statement(scope, fname)
+				{
+					if(aux == null)
+						error = true;
+					((CaseStatement) s).addCaseBlock(null, aux);
+				}
+				<EOS>
+			)
+			<END>
+		|
+			t = <WHILE>
+			try
+			{
+				{e = null;}
+				e = expression(scope)
+				{if (e == null)
+					error = true;}
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case DO:
+						case BEGIN:
+						case EOS:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			{
+				if(e == null)
+					error = true;
+				else if(!(e.getType() instanceof BooleanType))
+				{
+					error = true;
+					printError(t.next.beginLine, t.next.beginColumn, "incompatible types : at WHILE expression\nfound : " + e.getType() + "\nrequired : boolean");
+				}
+			}
+			try
+			{
+				<DO>
+			}
+			catch(ParseException exc)
+			{
+				error = true;
+				boolean synch = false;
+				printParseExc(exc);
+				while(!synch)
+				{
+					switch(getToken(1).kind)
+					{
+						case DO:
+							synch = true;
+							getNextToken();
+							break;
+						case BEGIN:
+						case EOS:
+						case EOF:
+							synch = true;
+							break;
+						default:
+							getNextToken();
+					}
+				}
+			}
+			aux = statement(scope, fname)
+			{
+				if(aux == null)
+					error = true;
+				else if(aux.hasReturnStatement() != null)
+				{
+					error = true;
+					printError(aux.hasReturnStatement().getLine(), aux.hasReturnStatement().getColumn(), "return statement is not placed at the last line of the function");
+				}
+				s = new WhileStatement(e, aux);
+			}
+		)
+	}
+	catch(ParseException exc)
+	{
+		error = true;
+		boolean synch = false;
+		printParseExc(exc);
+		while(!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case END:
+				case EOS:
+				case EOF:
+					synch = true;
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+	{
+		if(error)
+			return null;
+		else
+			return s;
+	}
+}
+
+void caseSequence(CaseStatement s, Type exprType, String scope, String fname) :
+{
+	boolean error = false;
+	Vector v = new Vector();
+	Constant c;
+	Statement aux;
+	IntWrapper line = new IntWrapper();
+	IntWrapper column = new IntWrapper();
+}
+{
+	try
+	{
+		c = constant(scope, line, column)
+		{
+			v.add(c);
+			v.add(line);
+			v.add(column);
+		}
+		(
+			<COMMA>
+			{
+				line = new IntWrapper();
+				column = new IntWrapper();
+			}
+			c = constant(scope, line, column)
+			{
+				v.add(c);
+				v.add(line);
+				v.add(column);
+			}
+		)*
+		<COLON>
+		aux = statement(scope, fname)
+		{
+			if(aux != null)
+			{
+				if(aux.hasReturnStatement() != null)
+				{
+					printError(aux.hasReturnStatement().getLine(), aux.hasReturnStatement().getColumn(), "return statement is not placed at the last line of the function");
+				}
+				else
+				{
+					for(int i = 0; i < v.size(); i += 3)
+					{
+						c = (Constant) v.elementAt(i);
+						line = (IntWrapper) v.elementAt(i + 1);
+						column = (IntWrapper) v.elementAt(i + 2);
+						if(c != null && exprType != null)
+						{
+							if(exprType.isCompatibleWith(c.getType()))
+							{
+								if(s.isRepeated(c))
+									printError(line.getValue(), column.getValue(), "case block for constant \"" + c + "\" is defined twice");
+								else
+									s.addCaseBlock(c, aux);
+							}
+							else
+							{
+								printError(line.getValue(), column.getValue(), "incompatible types : at CASE constant\nfound : " + c.getType() + "\nrequired : " + exprType);
+							}
+						}
+					}
+				}
+			}
+		}
+		<EOS>
+	}
+	catch(ParseException exc)
+	{
+		error = true;
+		boolean synch = false;
+		printParseExc(exc);
+		while(!synch)
+		{
+			switch(getToken(1).kind)
+			{
+				case END:
+				case EOF:
+					synch = true;
+					break;
+				case EOS:
+					synch = true;
+					getNextToken();
+					break;
+				default:
+					getNextToken();
+			}
+		}
+	}
+}

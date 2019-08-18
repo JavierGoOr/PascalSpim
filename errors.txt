@@ -1,0 +1,38 @@
+number exceeds INTEGER range
+number exceeds REAL range
+//invalid string length
+identifier x has already been defined in this scope
+identifier x is not defined
+identifier x does not represent a type
+identifier x does not represent a variable
+identifier x does not represent a function
+identifier x does not represent a constant
+x is a procedure: procedures cannot be called here
+identifier x does not represent either a function or a variable
+x cannot be applied to [function] x
+variable x is not an array
+lower bound greater than upper bound
+this variable cannot be indexed
+too many indexes for this bracket
+this expression is not of type integer
+not enough indexes for this bracket
+this is not a callable object
+operator x cannot be applied between x and x
+operator x cannot be applied to x
+incompatible types
+	: at assignment
+	: at IF expression
+	: at WHILE expression
+	: at CASE constant
+type x cannot be used in a case statement
+x is a function, but its return value it is not used
+case block for contant x is defined twice
+function x has no return statement
+return statement without a function
+return statement for function x, within function x
+return statement is not placed at the last line of the function
+a function cannot return an array
+array not completely indexed
+only one position of an array can be assigned at a time
+
+Lexical error: character not parsed

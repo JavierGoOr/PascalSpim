@@ -1,0 +1,19 @@
+program fact;
+var
+	global : boolean;
+function factorial(num:integer):real;
+var
+	result : real;
+begin
+	global := true;
+	if num = 1 then
+		result := 1;
+	else
+		result := factorial(num - 1) * num;
+	factorial := result;
+end;
+begin
+	global := false;
+	writerealln(factorial(5));
+	writebooleanln(not true or false);
+end.

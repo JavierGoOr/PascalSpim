@@ -1,0 +1,36 @@
+program tipos;
+const
+type
+	a = integer;
+	b = real;
+	c = char;
+	{d = string;
+	e = string[-1];
+	f = string[1000];}
+	g = array[1..1] of array[1..7, -4..9] of integer;
+var
+	v1, v1, v3 : integer;
+	a1 : g;
+function f2() : integer;
+begin
+		f2 := 1;
+end;
+function f1(var v1 : real; var c2: string) : integer;
+var
+	r : real;
+begin
+	f2 := 3.0;
+end;
+procedure f3(var v1 : real; var c2: string);
+begin
+end;
+begin
+	{v1 := 3 < 2.0 = a1[1][2, 0]}
+	if (v1=0)
+	begin
+		v1 := 7;
+		v4 := 8;
+	end;
+	else
+		v4 := 8;
+end.
