@@ -1,8 +1,8 @@
 import java.io.*;
 /**
  *Esta clase controla la escritura de ficheros.
- *@author Daniel Fernández Caballero
- *@author Francisco Javier González Ortega
+ *@author Daniel FernÃ¡ndez Caballero
+ *@author Francisco Javier GonzÃ¡lez Ortega
  *@version 7-1-2004
 */
 public class FicheroEscritura{
@@ -11,12 +11,12 @@ public class FicheroEscritura{
     */
     private PrintWriter _fichero;
     /**
-     *Dirección del fichero.
+     *DirecciÃ³n del fichero.
     */
     private String _nombreFichero;
     /**
      *Constructor de la clase.
-     *@param nombreFichero Dirección del fichero.
+     *@param nombreFichero DirecciÃ³n del fichero.
     */
     public FicheroEscritura(String nombreFichero){
         _nombreFichero = nombreFichero;
@@ -36,8 +36,8 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Escribe un carácter en el fichero.
-     *@param c Carácter a escribir.
+     *Escribe un carÃ¡cter en el fichero.
+     *@param c CarÃ¡cter a escribir.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
     public boolean escribir(char c){
@@ -111,8 +111,8 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Escribe un carácter en el fichero, y salta a la línea siguiente.
-     *@param c Carácter a escribir.
+     *Escribe un carÃ¡cter en el fichero, y salta a la lÃ­nea siguiente.
+     *@param c CarÃ¡cter a escribir.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
     public boolean escribirLinea(char c){
@@ -126,7 +126,7 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Escribe un dato de tipo boolean en el fichero, y salta a la línea siguiente.
+     *Escribe un dato de tipo boolean en el fichero, y salta a la lÃ­nea siguiente.
      *@param c Dato de tipo boolean a escribir.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
@@ -141,7 +141,7 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Escribe un dato de tipo long en el fichero, y salta a la línea siguiente.
+     *Escribe un dato de tipo long en el fichero, y salta a la lÃ­nea siguiente.
      *@param c Dato de tipo long a escribir.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
@@ -156,7 +156,7 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Escribe un dato de tipo double en el fichero, y salta a la línea siguiente.
+     *Escribe un dato de tipo double en el fichero, y salta a la lÃ­nea siguiente.
      *@param c Dato de tipo double a escribir.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
@@ -171,7 +171,7 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Escribe una cadena de caracteres en el fichero, y salta a la línea siguiente.
+     *Escribe una cadena de caracteres en el fichero, y salta a la lÃ­nea siguiente.
      *@param c Cadena a escribir.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
@@ -186,7 +186,7 @@ public class FicheroEscritura{
         return realizado;
     }
     /**
-     *Introduce un salto de línea en el fichero.
+     *Introduce un salto de lÃ­nea en el fichero.
      *@return True si ha conseguido escribir en el fichero, false en caso contrario.
     */
     public boolean nuevaLinea(){
