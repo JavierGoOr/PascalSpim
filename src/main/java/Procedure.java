@@ -1,3 +1,2 @@
-public class Procedure extends FunctOrProc
-{
+public class Procedure extends FunctOrProc {
 }
