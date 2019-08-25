@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.statements.Statement;
+
 import java.util.Vector;
 
 public class Block {

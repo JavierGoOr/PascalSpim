@@ -1,4 +1,10 @@
-package org.pascal2spim;
+package org.pascal2spim.statements;
+
+import org.pascal2spim.Code;
+import org.pascal2spim.Expression;
+import org.pascal2spim.Register;
+import org.pascal2spim.RegisterManager;
+import org.pascal2spim.statements.Statement;
 
 public class IfStatement extends Statement {
     private Expression condition;

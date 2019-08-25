@@ -1,4 +1,6 @@
-package org.pascal2spim;
+package org.pascal2spim.statements;
+
+import org.pascal2spim.*;
 
 public class AssignStatement extends Statement {
     private SymbolTableEntry functName; //function name

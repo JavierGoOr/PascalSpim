@@ -1,6 +1,6 @@
 package org.pascal2spim;
 
-class BooleanConstant extends Constant {
+public class BooleanConstant extends Constant {
     private boolean value;
 
     public BooleanConstant() {

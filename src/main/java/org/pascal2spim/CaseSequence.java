@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.statements.Statement;
+
 public class CaseSequence {
     private Constant caseConst;
     private Statement block;

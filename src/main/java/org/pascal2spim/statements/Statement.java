@@ -1,4 +1,4 @@
-package org.pascal2spim;
+package org.pascal2spim.statements;
 
 public abstract class Statement {
     protected int line;

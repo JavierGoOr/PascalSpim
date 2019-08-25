@@ -1,4 +1,6 @@
-package org.pascal2spim;
+package org.pascal2spim.statements;
+
+import org.pascal2spim.FunctionCall;
 
 public class FunctionCallStatement extends Statement {
     private FunctionCall fc;
