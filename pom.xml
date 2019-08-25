@@ -40,7 +40,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>PascalSpim</mainClass>
+                            <mainClass>org.pascal2spim.PascalSpim</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
