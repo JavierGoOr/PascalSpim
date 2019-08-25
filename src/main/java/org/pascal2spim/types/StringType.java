@@ -1,4 +1,4 @@
-package org.pascal2spim;
+package org.pascal2spim.types;
 
 public class StringType extends Type {
     int resLength = 255; //reserved length

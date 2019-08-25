@@ -1,18 +1,18 @@
-package org.pascal2spim;
+package org.pascal2spim.types;
 
-public class IntegerType extends Type {
+public class BooleanType extends Type {
     public boolean isEqualTo(Type other) {
         return this.isCompatibleWith(other);
     }
 
     public boolean isCompatibleWith(Type other) {
         boolean compatible = false;
-        if (other instanceof IntegerType)
+        if (other instanceof BooleanType)
             compatible = true;
         return compatible;
     }
 
     public String toString() {
-        return "integer";
+        return "boolean";
     }
 }

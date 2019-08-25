@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.IntegerType;
+
 public class IntegerConstant extends Constant {
     private int value = 0;
 

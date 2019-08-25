@@ -1,5 +1,9 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.ArrayType;
+import org.pascal2spim.types.RealType;
+import org.pascal2spim.types.Type;
+
 public class VariableApparition extends FactorObject {
     protected SymbolTableEntry description;
 

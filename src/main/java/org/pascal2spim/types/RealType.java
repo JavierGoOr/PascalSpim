@@ -1,4 +1,4 @@
-package org.pascal2spim;
+package org.pascal2spim.types;
 
 public class RealType extends Type {
     public boolean isEqualTo(Type other) {

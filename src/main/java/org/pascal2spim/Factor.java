@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.Type;
+
 public class Factor {
     private Operator prevOperator; //it can only be a NOT operator
     private FactorObject factor;

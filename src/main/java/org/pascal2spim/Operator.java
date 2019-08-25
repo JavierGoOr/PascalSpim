@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.Type;
+
 public abstract class Operator {
     protected String kind;
 

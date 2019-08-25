@@ -10,6 +10,8 @@ package org.pascal2spim;
 
 import java.io.*;
 import java.util.Vector;
+import org.pascal2spim.statements.*;
+import org.pascal2spim.types.*;
 
 public class PascalSpim
 {
@@ -1227,7 +1229,7 @@ Type typeConst(String scope) :
 	if(tp2 == null)
 		error = true;
 	if(!error)
-		((org.pascal2spim.ArrayType) tp).setElsType(tp2);
+		((org.pascal2spim.types.ArrayType) tp).setElsType(tp2);
 }
 	)
 	{

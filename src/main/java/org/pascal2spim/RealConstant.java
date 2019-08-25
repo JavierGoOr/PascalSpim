@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.RealType;
+
 public class RealConstant extends Constant {
     private double value = 0;
 

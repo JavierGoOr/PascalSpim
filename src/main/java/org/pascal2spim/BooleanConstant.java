@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.BooleanType;
+
 public class BooleanConstant extends Constant {
     private boolean value;
 

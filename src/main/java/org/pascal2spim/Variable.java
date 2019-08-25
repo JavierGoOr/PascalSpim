@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.Type;
+
 public class Variable implements SymbolTableObject {
     private Type type;
     private boolean isParameter; //it is found in a parameterList nonterminal

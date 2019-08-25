@@ -1,5 +1,7 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.CharType;
+
 public class CharConstant extends Constant {
     private char value;
 

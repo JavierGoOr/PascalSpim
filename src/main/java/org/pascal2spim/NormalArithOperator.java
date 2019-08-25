@@ -1,5 +1,9 @@
 package org.pascal2spim;
 
+import org.pascal2spim.types.IntegerType;
+import org.pascal2spim.types.RealType;
+import org.pascal2spim.types.Type;
+
 public class NormalArithOperator extends Operator {
     public Type resultType(Type op1, Type op2) {
         Type result = null;

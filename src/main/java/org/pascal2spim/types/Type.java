@@ -1,4 +1,6 @@
-package org.pascal2spim;
+package org.pascal2spim.types;
+
+import org.pascal2spim.SymbolTableObject;
 
 public abstract class Type implements SymbolTableObject {
     abstract public boolean isCompatibleWith(Type other);

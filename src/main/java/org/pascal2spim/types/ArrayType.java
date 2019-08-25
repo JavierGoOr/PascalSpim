@@ -1,4 +1,4 @@
-package org.pascal2spim;
+package org.pascal2spim.types;
 
 import java.util.Vector;
 
