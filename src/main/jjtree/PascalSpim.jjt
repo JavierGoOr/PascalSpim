@@ -10,7 +10,9 @@ package org.pascal2spim;
 
 import java.io.*;
 import java.util.Vector;
+import org.pascal2spim.constants.*;
 import org.pascal2spim.statements.*;
+import org.pascal2spim.statements.switchcase.*;
 import org.pascal2spim.types.*;
 
 public class PascalSpim

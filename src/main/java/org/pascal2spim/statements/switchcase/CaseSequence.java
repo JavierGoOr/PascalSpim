@@ -1,5 +1,6 @@
-package org.pascal2spim;
+package org.pascal2spim.statements.switchcase;
 
+import org.pascal2spim.constants.Constant;
 import org.pascal2spim.statements.Statement;
 
 public class CaseSequence {

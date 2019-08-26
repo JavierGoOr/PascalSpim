@@ -1,5 +1,8 @@
-package org.pascal2spim;
+package org.pascal2spim.constants;
 
+import org.pascal2spim.Code;
+import org.pascal2spim.PascalSpim;
+import org.pascal2spim.RegisterManager;
 import org.pascal2spim.types.IntegerType;
 
 public class IntegerConstant extends Constant {

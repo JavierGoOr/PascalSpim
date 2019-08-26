@@ -1,5 +1,7 @@
-package org.pascal2spim;
+package org.pascal2spim.constants;
 
+import org.pascal2spim.FactorObject;
+import org.pascal2spim.SymbolTableObject;
 import org.pascal2spim.types.Type;
 
 public abstract class Constant extends FactorObject implements SymbolTableObject {

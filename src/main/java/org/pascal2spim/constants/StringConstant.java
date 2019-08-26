@@ -1,4 +1,4 @@
-package org.pascal2spim;
+package org.pascal2spim.constants;
 
 import org.pascal2spim.types.StringType;
 

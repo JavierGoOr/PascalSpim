@@ -1,6 +1,14 @@
-package org.pascal2spim.statements;
+package org.pascal2spim.statements.switchcase;
 
-import org.pascal2spim.*;
+import org.pascal2spim.Code;
+import org.pascal2spim.Expression;
+import org.pascal2spim.Register;
+import org.pascal2spim.RegisterManager;
+import org.pascal2spim.constants.BooleanConstant;
+import org.pascal2spim.constants.CharConstant;
+import org.pascal2spim.constants.Constant;
+import org.pascal2spim.constants.IntegerConstant;
+import org.pascal2spim.statements.Statement;
 
 import java.util.Vector;
 
