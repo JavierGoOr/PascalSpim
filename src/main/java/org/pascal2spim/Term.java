@@ -1,5 +1,6 @@
 package org.pascal2spim;
 
+import org.pascal2spim.operators.Operator;
 import org.pascal2spim.types.Type;
 
 import java.util.Vector;

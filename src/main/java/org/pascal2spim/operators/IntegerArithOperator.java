@@ -1,4 +1,4 @@
-package org.pascal2spim;
+package org.pascal2spim.operators;
 
 import org.pascal2spim.types.IntegerType;
 import org.pascal2spim.types.Type;
