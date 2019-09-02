@@ -17,6 +17,8 @@ import org.pascal2spim.statements.switchcase.*;
 import org.pascal2spim.types.*;
 
 public class PascalSpim {
+    private static PascalSpim ps;
+
     public static void main(String args[]) throws Exception {
         launch(args);
     }
@@ -32,21 +34,28 @@ public class PascalSpim {
             file_in = args[0];
             file_out = args[1];
         }
-        PascalSpim ps;
         try {
-            ps = new PascalSpim(new BufferedReader(new FileReader(file_in)));
+            Reader in = new BufferedReader(new FileReader(file_in));
+            if (ps == null) {
+                ps = new PascalSpim(in);
+            } else {
+                ps.ReInit(in);
+            }
         } catch (IOException e) {
             System.out.println("Error: file \"" + file_in + "\" cannot be read. Please check whether it exists.");
             return;
         }
-        Program n = ps.programStart();
         SymbolTable st = SymbolTable.getInstance();
+        st.init();
+        Code code = Code.getInstance();
+        code.init();
+
+        Program n = ps.programStart();
         if (st.getError()) {
             System.out.println("Process finished with errors");
         } else {
             System.out.println("Process finished correctly.");
             n.generateCode();
-            Code code = Code.getInstance();
             boolean done = code.writeCode(file_out);
             if (!done) {
                 System.out.println("Error: file \"" + file_out + "\" could not be written.");

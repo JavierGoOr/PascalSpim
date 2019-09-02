@@ -1,7 +1,10 @@
 package org.pascal2spim.acceptance;
 
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import mars.MarsLaunch;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.pascal2spim.PascalSpim;
 
 import java.io.ByteArrayOutputStream;
@@ -19,15 +22,17 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(JUnitParamsRunner.class)
 public class AcceptanceTest {
     private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private final ClassLoader classloader = getClass().getClassLoader();
 
     @Test
-    public void should_print_the_expected_outputs_when_executing_assembly_output() throws Exception {
-        //given
-        final String programName = "fibonacci";
+    @Parameters({"fibonacci", "factorial"})
+    public void should_print_the_expected_outputs_when_executing_assembly_output
+            (final String programName) throws Exception {
 
+        //given
         File outputAssemblyFile = getOutputAssemblyFile();
         File pascalFile = getPascalFile(programName);
         String expectedOutput = getExpectedOutput(programName);

@@ -8,14 +8,18 @@ public class SymbolTable {
     private Namespace namespace;
 
     private SymbolTable() {
-        error = false;
-        namespace = new Namespace("1");
+        init();
     }
 
     public static SymbolTable getInstance() {
         if (instance == null)
             instance = new SymbolTable();
         return instance;
+    }
+
+    public void init() {
+        error = false;
+        namespace = new Namespace("1");
     }
 
     public void dump() {

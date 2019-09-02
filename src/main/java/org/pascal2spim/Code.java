@@ -4,13 +4,22 @@ import java.util.Vector;
 
 public class Code {
     private static Code instance;
-    int n = 0;
-    int constN = 0;
+
+    private int n = 0;
+    private int constN = 0;
     private Vector dataSegm = new Vector();
     private Vector sentences = new Vector();
     private String label = null;
 
     private Code() {
+    }
+
+    public void init() {
+        n = 0;
+        constN = 0;
+        dataSegm = new Vector();
+        sentences = new Vector();
+        label = null;
     }
 
     public static Code getInstance() {
