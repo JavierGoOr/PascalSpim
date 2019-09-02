@@ -63,15 +63,14 @@ public class AcceptanceTest {
 
     private String readFile(Path pathToFile) throws IOException {
         Stream<String> lines = Files.lines(pathToFile);
-        return lines.collect(Collectors.joining(System.lineSeparator()));
+        return lines.collect(Collectors.joining("\n"));
     }
 
     private String executeAssembly(File outputAssemblyFile) {
         changeSystemDefaultsForMARS();
         executeWithMARS(outputAssemblyFile);
         restoreSystemDefaults();
-
-        return outContent.toString();
+        return getMARSExecutionOutput();
     }
 
     private void executeWithMARS(File outputAssemblyFile) {
@@ -80,6 +79,14 @@ public class AcceptanceTest {
         } catch (SecurityException e) {
             // do nothing
         }
+    }
+
+    private String getMARSExecutionOutput() {
+        String completeOutput = outContent.toString();
+        int startExecutionOutput = completeOutput.indexOf("\r\n") + 1;
+        int endExecutionOutput = completeOutput.lastIndexOf("\r\n");
+
+        return completeOutput.substring(startExecutionOutput, endExecutionOutput);
     }
 
     private void changeSystemDefaultsForMARS() {
