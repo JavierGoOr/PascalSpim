@@ -1,4 +1,4 @@
-program variables;
+program switchCaseInt;
 const
 	c3 = 'j';
 var

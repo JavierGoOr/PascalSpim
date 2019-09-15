@@ -1,4 +1,4 @@
-program variables;
+program switchCaseReal;
 const
 	c3 = 'j';
 var

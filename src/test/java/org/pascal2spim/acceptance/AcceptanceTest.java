@@ -28,7 +28,7 @@ public class AcceptanceTest {
     private final ClassLoader classloader = getClass().getClassLoader();
 
     @Test
-    @Parameters({"fibonacci", "factorial", "variables"})
+    @Parameters({"fibonacci", "factorial", "variables", "switch_case_int", "switch_case_real"})
     public void should_print_the_expected_outputs_when_executing_assembly_output
             (final String programName) throws Exception {
 
