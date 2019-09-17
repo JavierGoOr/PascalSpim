@@ -45,6 +45,24 @@ public class AcceptanceTest {
         assertThat(actualOutput).isEqualToIgnoringNewLines(expectedOutput);
     }
 
+    @Test
+    @Parameters({"more_variables", "types"})
+    public void should_generate_expected_assembly_after_compiling
+            (final String programName) throws Exception {
+
+        //given
+        File outputAssemblyFile = getOutputAssemblyFile();
+        File pascalFile = getPascalFile(programName);
+        String expectedAssembly = getExpectedAssembly(programName);
+
+        //when
+        compile(pascalFile, outputAssemblyFile);
+        String actualAssembly = readFile(outputAssemblyFile.toPath());
+
+        //then
+        assertThat(actualAssembly).isEqualToIgnoringNewLines(expectedAssembly);
+    }
+
     private File getPascalFile(final String programName) throws URISyntaxException {
         URL resource = classloader.getResource("acceptancetests/input/" + programName + ".pas");
         return Paths.get(resource.toURI()).toFile();
@@ -54,6 +72,12 @@ public class AcceptanceTest {
         URL urlForExpectedOutput = classloader.getResource("acceptancetests/output/" + programName + ".out");
         Path pathForExpectedOutput = Paths.get(urlForExpectedOutput.toURI());
         return readFile(pathForExpectedOutput);
+    }
+
+    private String getExpectedAssembly(final String programName) throws IOException, URISyntaxException {
+        URL urlForExpectedAssembly = classloader.getResource("acceptancetests/assembly/" + programName + ".s");
+        Path pathForExpectedAssembly = Paths.get(urlForExpectedAssembly.toURI());
+        return readFile(pathForExpectedAssembly);
     }
 
     private File getOutputAssemblyFile() throws IOException {
