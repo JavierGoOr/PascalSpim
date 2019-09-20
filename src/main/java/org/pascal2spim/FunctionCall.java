@@ -78,43 +78,41 @@ public class FunctionCall extends VariableApparition {
         return description.getName() + description.getObject();
     }
 
-    public void generateCode() {
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager) {
         int displ = 0, tdispl = 0;
         Expression e;
         Register reg;
         FunctOrProc f = (FunctOrProc) description.getObject();
         //rm.saveGlobalVariables();
-        rm.saveRegisters();
-        Register[] state = rm.storeInStack();
+        registerManager.saveRegisters(code);
+        Register[] state = registerManager.storeInStack(code);
         for (int i = 0; i < parameters.size(); i++) {
             e = (Expression) parameters.elementAt(i);
-            e.generateCode();
+            e.generateCode(code, registerManager);
             reg = e.getRegister();
             Variable v = (Variable) f.getParameter(i).getObject();
             if (v.getType() instanceof ArrayType) {
                 displ = 4;
-                reg.checkAndLiberate();
+                reg.checkAndLiberate(code);
                 code.addSentence("subu $sp, $sp, " + displ);
                 code.addSentence("sw " + reg.getName() + ", ($sp)");
             } else if (v.getType() instanceof RealType) {
                 displ = 8;
-                reg.checkAndLiberate();
+                reg.checkAndLiberate(code);
                 Register aux;
                 code.addSentence("subu $sp, $sp, " + displ);
                 if (reg.isFPoint()) {
                     code.addSentence("s.d " + reg.getName() + ", ($sp)");
                 } else {
-                    aux = rm.getFreeFloatRegister();
+                    aux = registerManager.getFreeFloatRegister(code);
                     code.addSentence("mtc1 " + reg.getName() + ", " + aux.getName());
                     code.addSentence("cvt.d.w " + aux.getName() + ", " + aux.getName());
-                    aux.liberate();
+                    aux.liberate(code);
                     code.addSentence("s.d " + aux.getName() + ", ($sp)");
                 }
             } else {
                 displ = 4;
-                reg.checkAndLiberate();
+                reg.checkAndLiberate(code);
                 code.addSentence("subu $sp, $sp, " + displ);
                 code.addSentence("sw " + reg.getName() + ", ($sp)");
             }
@@ -122,15 +120,15 @@ public class FunctionCall extends VariableApparition {
         }
         code.addSentence("jal _" + description.getName());
         code.addSentence("addu $sp, $sp, " + tdispl);
-        rm.recoverFromStack(state);
-        rm.reloadGlobalVariables();
+        registerManager.recoverFromStack(state, code);
+        registerManager.reloadGlobalVariables(code);
         if (f instanceof Function) {
             if (((Function) f).getReturnType() instanceof RealType) {
-                register = rm.getFreeFloatRegister();
-                code.addSentence("mov.d " + register.getName() + ", " + rm.getFloatResult().getName());
+                register = registerManager.getFreeFloatRegister(code);
+                code.addSentence("mov.d " + register.getName() + ", " + registerManager.getFloatResult().getName());
             } else {
-                register = rm.getFreeRegister();
-                code.addSentence("move " + register.getName() + ", " + rm.getIntResult().getName());
+                register = registerManager.getFreeRegister(code);
+                code.addSentence("move " + register.getName() + ", " + registerManager.getIntResult().getName());
             }
         }
     }

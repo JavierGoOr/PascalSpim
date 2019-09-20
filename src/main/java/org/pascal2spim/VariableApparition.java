@@ -39,19 +39,17 @@ public class VariableApparition extends FactorObject {
         return 0;
     }
 
-    protected void setRegister(Register reg) {
-        reg.setVariable(this);
+    protected void setRegister(Register reg, RegisterManager registerManager) {
+        reg.setVariable(this, registerManager);
         register = reg;
     }
 
-    public void generateCode() {
-        RegisterManager rm = RegisterManager.getInstance();
-        register = rm.getRegisterOfVar(this);
+    public void generateCode(Code code, RegisterManager registerManager) {
+        register = registerManager.getRegisterOfVar(this);
         if (register == null) {
-            Code code = Code.getInstance();
             if (this.getType() instanceof RealType) {
-                register = rm.getFreeFloatRegister();
-                register.setVariable(this);
+                register = registerManager.getFreeFloatRegister(code);
+                register.setVariable(this, registerManager);
                 if (((Variable) description.getObject()).getIsLocal())
                     code.addSentence("l.d " + register.getName() + ", " + (((Variable) description.getObject()).getDisplacement() * -1) + "($fp)");
                 else {
@@ -65,8 +63,8 @@ public class VariableApparition extends FactorObject {
 				code.addSentence("la " + register.getName() + ", " + description.getName());
 			}
 			else*/ {
-                register = rm.getFreeRegister();
-                register.setVariable(this);
+                register = registerManager.getFreeRegister(code);
+                register.setVariable(this, registerManager);
                 if (((Variable) description.getObject()).getIsLocal())
                     code.addSentence("lw " + register.getName() + ", " + (((Variable) description.getObject()).getDisplacement() * -1) + "($fp)");
                 else if (this.getType() instanceof ArrayType) {

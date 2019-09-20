@@ -1,5 +1,7 @@
 package org.pascal2spim.constants;
 
+import org.pascal2spim.Code;
+import org.pascal2spim.RegisterManager;
 import org.pascal2spim.types.StringType;
 
 class StringConstant extends Constant {
@@ -25,6 +27,6 @@ class StringConstant extends Constant {
         return value;
     }
 
-    public void generateCode() {
+    public void generateCode(Code code, RegisterManager registerManager) {
     }
 }

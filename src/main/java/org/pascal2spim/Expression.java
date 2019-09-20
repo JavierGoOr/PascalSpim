@@ -48,32 +48,30 @@ public class Expression extends FactorObject {
         return typeAux;
     }
 
-    public void generateCode() {
-        RegisterManager rm = RegisterManager.getInstance();
-        Code code = Code.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager) {
         boolean fpoint = false;
         String assemblyOp;
         Operator op;
         Register r1 = null, r2 = null;
         SimpleExpression se2;
-        firstExpr.generateCode();
+        firstExpr.generateCode(code, registerManager);
         register = firstExpr.getRegister();
         for (int i = 0; i < otherExprs.size(); i += 2) {
             fpoint = false;
             op = (Operator) otherExprs.elementAt(i);
             se2 = (SimpleExpression) otherExprs.elementAt(i + 1);
             register.setNotStore(true);
-            se2.generateCode();
+            se2.generateCode(code, registerManager);
             register.setNotStore(false);
             if (register.isFPoint() || se2.getRegister().isFPoint()) {
                 fpoint = true;
                 if (!register.isFPoint()) {
-                    r1 = rm.getFreeFloatRegister();
+                    r1 = registerManager.getFreeFloatRegister(code);
                     code.addSentence("mtc1 " + register.getName() + ", " + r1.getName());
                     code.addSentence("cvt.d.w " + r1.getName() + ", " + r1.getName());
                     r2 = se2.getRegister();
                 } else if (!se2.getRegister().isFPoint()) {
-                    r2 = rm.getFreeFloatRegister();
+                    r2 = registerManager.getFreeFloatRegister(code);
                     code.addSentence("mtc1 " + se2.getRegister().getName() + ", " + r2.getName());
                     code.addSentence("cvt.d.w " + r2.getName() + ", " + r2.getName());
                     r1 = register;
@@ -81,16 +79,16 @@ public class Expression extends FactorObject {
                     r1 = register;
                     r2 = se2.getRegister();
                 }
-                r1.checkAndLiberate();
-                r2.checkAndLiberate();
+                r1.checkAndLiberate(code);
+                r2.checkAndLiberate(code);
             } else {
                 r1 = register;
                 r2 = se2.getRegister();
             }
-            register.checkAndLiberate();
-            se2.getRegister().checkAndLiberate();
+            register.checkAndLiberate(code);
+            se2.getRegister().checkAndLiberate(code);
             assemblyOp = op.getAssemblyOp(fpoint);
-            register = rm.getFreeRegister();
+            register = registerManager.getFreeRegister(code);
             if (fpoint) {
                 code.addSentence(assemblyOp + " " + r1.getName() + ", " + r2.getName());
                 boolean inverse = false;

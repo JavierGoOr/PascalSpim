@@ -1,6 +1,8 @@
 package org.pascal2spim.statements;
 
+import org.pascal2spim.Code;
 import org.pascal2spim.FunctionCall;
+import org.pascal2spim.RegisterManager;
 
 public class FunctionCallStatement extends Statement {
     private FunctionCall fc;
@@ -17,7 +19,7 @@ public class FunctionCallStatement extends Statement {
         this.fc = fc;
     }
 
-    public void generateCode() {
-        fc.generateCode();
+    public void generateCode(Code code, RegisterManager registerManager) {
+        fc.generateCode(code, registerManager);
     }
 }

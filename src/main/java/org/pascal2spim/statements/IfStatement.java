@@ -4,7 +4,6 @@ import org.pascal2spim.Code;
 import org.pascal2spim.Expression;
 import org.pascal2spim.Register;
 import org.pascal2spim.RegisterManager;
-import org.pascal2spim.statements.Statement;
 
 public class IfStatement extends Statement {
     private Expression condition;
@@ -47,34 +46,32 @@ public class IfStatement extends Statement {
         this.blockElse = blockElse;
     }
 
-    public void generateCode() {
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager) {
         Register[] state;
         int n = code.getConsecutive();
         int ordering;
         String labelElse = "__else" + n;
         String labelEnd = "__ifend" + n;
-        condition.generateCode();
-        condition.getRegister().checkAndLiberate();
-        ordering = rm.giveCurrentNumber();
-        state = rm.saveStateOfRegisters();
+        condition.generateCode(code, registerManager);
+        condition.getRegister().checkAndLiberate(code);
+        ordering = registerManager.giveCurrentNumber();
+        state = registerManager.saveStateOfRegisters();
         if (blockElse != null) {
             code.addSentence("beqz " + condition.getRegister().getName() + ", " + labelElse);
-            block.generateCode();
-            rm.storeLoadedVars(ordering);
-            rm.recoverStateOfRegisters(state);
+            block.generateCode(code, registerManager);
+            registerManager.storeLoadedVars(ordering, code);
+            registerManager.recoverStateOfRegisters(state, code);
             code.addSentence("b " + labelEnd);
             code.addLabel(labelElse);
-            blockElse.generateCode();
-            rm.storeLoadedVars(ordering);
-            rm.recoverStateOfRegisters(state);
+            blockElse.generateCode(code, registerManager);
+            registerManager.storeLoadedVars(ordering, code);
+            registerManager.recoverStateOfRegisters(state, code);
             code.addLabel(labelEnd);
         } else {
             code.addSentence("beqz " + condition.getRegister().getName() + ", " + labelEnd);
-            block.generateCode();
-            rm.storeLoadedVars(ordering);
-            rm.recoverStateOfRegisters(state);
+            block.generateCode(code, registerManager);
+            registerManager.storeLoadedVars(ordering, code);
+            registerManager.recoverStateOfRegisters(state, code);
             code.addLabel(labelEnd);
         }
     }

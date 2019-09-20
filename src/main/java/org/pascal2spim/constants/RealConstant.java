@@ -32,10 +32,8 @@ public class RealConstant extends Constant {
         return "" + value;
     }
 
-    public void generateCode() {
-        RegisterManager rm = RegisterManager.getInstance();
-        Code code = Code.getInstance();
-        register = rm.getFreeFloatRegister();
+    public void generateCode(Code code, RegisterManager registerManager) {
+        register = registerManager.getFreeFloatRegister(code);
         int n = code.getConsecutiveForConst();
         code.addDataSentence("\treal_ct" + n + ":\t.double " + this.toString().toLowerCase());
         code.addSentence("l.d " + register.getName() + ", real_ct" + n);

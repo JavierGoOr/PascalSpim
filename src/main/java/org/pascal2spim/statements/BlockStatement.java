@@ -1,5 +1,7 @@
 package org.pascal2spim.statements;
 
+import org.pascal2spim.Code;
+import org.pascal2spim.RegisterManager;
 import org.pascal2spim.SymbolTableEntry;
 
 import java.util.Vector;
@@ -23,11 +25,11 @@ public class BlockStatement extends Statement {
         return (Statement) statements.elementAt(n);
     }
 
-    public void generateCode() {
+    public void generateCode(Code code, RegisterManager registerManager) {
         Statement st;
         for (int i = 0; i < statements.size(); i++) {
             st = (Statement) statements.elementAt(i);
-            st.generateCode();
+            st.generateCode(code, registerManager);
         }
     }
 

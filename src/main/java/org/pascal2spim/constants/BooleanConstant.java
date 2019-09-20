@@ -30,11 +30,9 @@ public class BooleanConstant extends Constant {
             return "false";
     }
 
-    public void generateCode() {
+    public void generateCode(Code code, RegisterManager registerManager) {
         int boolValue;
-        RegisterManager rm = RegisterManager.getInstance();
-        Code code = Code.getInstance();
-        register = rm.getFreeRegister();
+        register = registerManager.getFreeRegister(code);
         if (value)
             boolValue = 1;
         else

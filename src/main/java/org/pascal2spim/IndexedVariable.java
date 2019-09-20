@@ -93,29 +93,27 @@ public class IndexedVariable extends VariableApparition {
         return (tp.getDimensionMax(n) - tp.getDimensionMin(n) + 1);
     }
 
-    public void generateCode() {
-        generateCode(false);
+    public void generateCode(Code code, RegisterManager registerManager) {
+        generateCode(code, registerManager, false);
     }
 
-    public void generateCode(boolean onlyIndex) {
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager, boolean onlyIndex) {
         ArrayType tp = (ArrayType) getIndexedType();
         Register regAux, varReg = null;
         int i = 0;
         Expression e1 = this.getIndex(0), e2;
         if (indexedVar instanceof IndexedVariable) {
             IndexedVariable iv = (IndexedVariable) indexedVar;
-            iv.generateCode();
+            iv.generateCode(code, registerManager);
             indexReg = iv.indexReg;
             indexReg.setNotStore(true);
             if (iv.getElementsLastDim() > 1)
                 code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", " + iv.getElementsLastDim());
         }
-        e1.generateCode();
-        e1.getRegister().checkAndLiberate();
+        e1.generateCode(code, registerManager);
+        e1.getRegister().checkAndLiberate(code);
         if (indexReg == null) {
-            indexReg = rm.getFreeRegister();
+            indexReg = registerManager.getFreeRegister(code);
             code.addSentence("move " + indexReg.getName() + ", " + e1.getRegister().getName());
         } else {
             indexReg.setNotStore(false);
@@ -128,9 +126,9 @@ public class IndexedVariable extends VariableApparition {
                 code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", " + (tp.getDimensionMax(i) - tp.getDimensionMin(i) + 1));
             e2 = this.getIndex(i);
             indexReg.setNotStore(true);
-            e2.generateCode();
+            e2.generateCode(code, registerManager);
             indexReg.setNotStore(false);
-            e2.getRegister().checkAndLiberate();
+            e2.getRegister().checkAndLiberate(code);
             code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + e2.getRegister().getName());
             if (tp.getDimensionMin(i) != 0)
                 code.addSentence("sub " + indexReg.getName() + ", " + indexReg.getName() + ", " + tp.getDimensionMin(i));
@@ -138,10 +136,10 @@ public class IndexedVariable extends VariableApparition {
         if (!(indexedVar instanceof IndexedVariable)) {
             varReg = null;
             if (((ArrayType) indexedVar.getType()).getFinalElsType() instanceof RealType)
-                varReg = rm.getFreeFloatRegister();
+                varReg = registerManager.getFreeFloatRegister(code);
             else
                 varReg = indexReg;
-            indexedVar.setRegister(varReg);
+            indexedVar.setRegister(varReg, registerManager);
             varReg.setIndex(indexReg);
         }
         if (getIndexedType().toString().indexOf("array") == getIndexedType().toString().lastIndexOf("array")) //the last in the hierarchy
@@ -149,7 +147,7 @@ public class IndexedVariable extends VariableApparition {
             VariableApparition va = getVarApparition();
             Variable v = (Variable) va.getDescription().getObject();
             varReg = va.getRegister();
-            Register reg = rm.getFreeRegister();
+            Register reg = registerManager.getFreeRegister(code);
             if (varReg.isFPoint()) {
                 code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", 8");
                 if (v.getIsLocal()) {
@@ -160,7 +158,7 @@ public class IndexedVariable extends VariableApparition {
                 } else {
                     code.addSentence("la " + reg.getName() + ", _" + indexedVar.getDescription().getName());
                 }
-                reg.liberate();
+                reg.liberate(code);
                 code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + reg.getName());
                 if (!onlyIndex) {
                     code.addSentence("l.d " + varReg.getName() + ", (" + indexReg.getName() + ")");
@@ -175,7 +173,7 @@ public class IndexedVariable extends VariableApparition {
                 } else {
                     code.addSentence("la " + reg.getName() + ", _" + indexedVar.getDescription().getName());
                 }
-                reg.liberate();
+                reg.liberate(code);
                 code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + reg.getName());
                 if (!onlyIndex)
                     code.addSentence("lw " + varReg.getName() + ", (" + indexReg.getName() + ")");

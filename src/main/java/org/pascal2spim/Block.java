@@ -33,13 +33,11 @@ public class Block {
         functsProcs.add(functProc);
     }
 
-    public void generateCode() {
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager) {
         SymbolTableEntry ste;
         FunctOrProc fp;
-        statements.generateCode();
-        rm.saveVariables();
+        statements.generateCode(code, registerManager);
+        registerManager.saveVariables(code);
         if ((fname != null) && (fname.compareTo("1") == 0)) {
             code.addSentence("li $v0, 10");
             code.addSentence("syscall");
@@ -47,7 +45,7 @@ public class Block {
         for (int i = 0; i < functsProcs.size(); i++) {
             ste = (SymbolTableEntry) functsProcs.elementAt(i);
             fp = (FunctOrProc) ste.getObject();
-            fp.generateCode(ste.getName());
+            fp.generateCode(ste.getName(), code, registerManager);
         }
         if ((fname != null) && (fname.compareTo("1") == 0)) {
             code.addDataSentence("\tw_ln:\t.asciiz \"\\n\"");

@@ -32,10 +32,8 @@ public class IntegerConstant extends Constant {
         return "" + value;
     }
 
-    public void generateCode() {
-        RegisterManager rm = RegisterManager.getInstance();
-        Code code = Code.getInstance();
-        register = rm.getFreeRegister();
+    public void generateCode(Code code, RegisterManager registerManager) {
+        register = registerManager.getFreeRegister(code);
         code.addSentence("li " + register.getName() + ", " + value + "");
     }
 }

@@ -38,8 +38,8 @@ public class SymbolTable {
         return namespace.canBeOveridden(name, scope);
     }
 
-    public void generateCode() {
-        namespace.generateCode();
+    public void generateCode(Code code) {
+        namespace.generateCode(code);
     }
 
     public boolean getError() {

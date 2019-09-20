@@ -158,8 +158,7 @@ public class Namespace {
         return result;
     }
 
-    public void generateCode() {
-        Code code = Code.getInstance();
+    public void generateCode(Code code) {
         if (scope.compareTo("1") == 0) {
             SymbolTableEntry entry;
             String lineBegin;

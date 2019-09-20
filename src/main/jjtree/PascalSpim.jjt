@@ -47,7 +47,7 @@ public class PascalSpim {
         }
         SymbolTable st = SymbolTable.getInstance();
         st.init();
-        Code code = Code.getInstance();
+        Code code = new Code();
         code.init();
 
         Program n = ps.programStart();
@@ -55,7 +55,7 @@ public class PascalSpim {
             System.out.println("Process finished with errors");
         } else {
             System.out.println("Process finished correctly.");
-            n.generateCode();
+            n.generateCode(code, new RegisterManager());
             boolean done = code.writeCode(file_out);
             if (!done) {
                 System.out.println("Error: file \"" + file_out + "\" could not be written.");

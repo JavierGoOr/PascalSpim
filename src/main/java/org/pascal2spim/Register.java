@@ -39,10 +39,9 @@ public class Register {
         return variable;
     }
 
-    public void setVariable(VariableApparition variable) {
-        RegisterManager rm = RegisterManager.getInstance();
+    public void setVariable(VariableApparition variable, RegisterManager registerManager) {
         this.variable = variable;
-        ordering = rm.giveNumber();
+        ordering = registerManager.giveNumber();
     }
 
     public void changeState(VariableApparition variable, Register index, int ordering, boolean free, boolean ns) {
@@ -70,19 +69,18 @@ public class Register {
         return free;
     }
 
-    public void checkAndLiberate() {
+    public void checkAndLiberate(Code code) {
         if (variable == null || index != null) {
             if (index != null)
-                index.liberate();
-            this.liberate();
+                index.liberate(code);
+            this.liberate(code);
         }
     }
 
-    public void liberate() {
+    public void liberate(Code code) {
         this.free = true;
         if (variable != null) {
             Variable vaux = (Variable) variable.getDescription().getObject();
-            Code code = Code.getInstance();
             if (fpoint) {
                 if (index == null) {
                     if (vaux.getIsLocal())
@@ -105,13 +103,12 @@ public class Register {
             ordering = -1;
         }
         if (index != null)
-            index.checkAndLiberate();
+            index.checkAndLiberate(code);
     }
 
-    public void save() {
+    public void save(Code code) {
         if (variable != null) {
             Variable vaux = (Variable) variable.getDescription().getObject();
-            Code code = Code.getInstance();
             if (fpoint) {
                 if (index == null) {
                     if (vaux.getIsLocal())
@@ -132,10 +129,8 @@ public class Register {
         }
     }
 
-    public void liberateIfGlobalVariable() {
+    public void liberateIfGlobalVariable(Code code) {
         if (variable != null && (variable.getDescription().getScope().compareTo("1") == 0)) {
-            Variable vaux = (Variable) variable.getDescription().getObject();
-            Code code = Code.getInstance();
             if (fpoint) {
                 if (index == null) {
                     code.addSentence("s.d " + name + ", _" + variable.getDescription().getName());
@@ -152,10 +147,9 @@ public class Register {
         }
     }
 
-    public void reloadIfGlobalVariable() {
+    public void reloadIfGlobalVariable(Code code) {
         if (variable != null && (variable.getDescription().getScope().compareTo("1") == 0)) {
             Variable vaux = (Variable) variable.getDescription().getObject();
-            Code code = Code.getInstance();
             if (fpoint) {
                 if (index == null) {
                     code.addSentence("l.d " + name + ", _" + variable.getDescription().getName());

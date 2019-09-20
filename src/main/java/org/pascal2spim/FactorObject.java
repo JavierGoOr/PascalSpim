@@ -7,7 +7,7 @@ public abstract class FactorObject {
 
     abstract public Type getType();
 
-    abstract public void generateCode();
+    abstract public void generateCode(Code code, RegisterManager registerManager);
 
     public Register getRegister() {
         return register;

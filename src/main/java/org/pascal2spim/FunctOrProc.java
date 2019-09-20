@@ -59,20 +59,18 @@ public abstract class FunctOrProc implements SymbolTableObject {
             return "()";
     }
 
-    public void generateCode(String funcName) {
+    public void generateCode(String funcName, Code code, RegisterManager registerManager) {
         int space;
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
         code.addLabel("_" + funcName);
         code.addSentence("subu $sp, $sp, 8");
         code.addSentence("sw $ra, 4($sp)");
         code.addSentence("sw $fp, 0($sp)");
         code.addSentence("addu $fp, $sp, 8");
         space = indexVariables();
-        takeParameters();
+        takeParameters(code, registerManager);
         code.addSentence("subu $sp, $sp, " + space);
         if (specialFunc == null)
-            block.generateCode();
+            block.generateCode(code, registerManager);
         else if (specialFunc.compareTo("writeint") == 0) {
             code.addSentence("lw $a0, -12($fp)");
             code.addSentence("li $v0, 1");
@@ -135,7 +133,7 @@ public abstract class FunctOrProc implements SymbolTableObject {
             code.addSentence("la $a0, w_ln");
             code.addSentence("syscall");
         }
-        rm.saveVariables();
+        registerManager.saveVariables(code);
         code.addSentence("lw $ra, -4($fp)");
         code.addSentence("move $sp, $fp");
         code.addSentence("lw $fp, -8($fp)");
@@ -185,9 +183,7 @@ public abstract class FunctOrProc implements SymbolTableObject {
         return totalSpace;
     }
 
-    public void takeParameters() {
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
+    public void takeParameters(Code code, RegisterManager registerManager) {
         SymbolTableEntry ste;
         Variable v;
         int regCounter = 0;
@@ -240,14 +236,14 @@ public abstract class FunctOrProc implements SymbolTableObject {
             aux = ((Integer) inversedispl.elementAt(parameters.size() - counter - 1)).intValue();
             counter++;
             if (v.getType() instanceof RealType) {
-                raux = rm.getFreeFloatRegister();
+                raux = registerManager.getFreeFloatRegister(code);
                 code.addSentence("l.d " + raux.getName() + ", " + aux + "($fp)");
-                raux.liberate();
+                raux.liberate(code);
                 code.addSentence("s.d " + raux.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
             } else {
-                raux = rm.getFreeRegister();
+                raux = registerManager.getFreeRegister(code);
                 code.addSentence("lw " + raux.getName() + ", " + aux + "($fp)");
-                raux.liberate();
+                raux.liberate(code);
                 code.addSentence("sw " + raux.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
             }
             //}

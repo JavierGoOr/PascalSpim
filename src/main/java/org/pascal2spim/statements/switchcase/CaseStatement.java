@@ -36,18 +36,16 @@ public class CaseStatement extends Statement {
             caseStats.add(new CaseSequence(caseConst, block));
     }
 
-    public void generateCode() {
-        Code code = Code.getInstance();
-        RegisterManager rm = RegisterManager.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager) {
         Register[] state;
         CaseSequence cs;
         String value = null;
         int n = code.getConsecutive();
         int ordering;
-        caseExpr.generateCode();
-        caseExpr.getRegister().checkAndLiberate();
-        ordering = rm.giveCurrentNumber();
-        state = rm.saveStateOfRegisters();
+        caseExpr.generateCode(code, registerManager);
+        caseExpr.getRegister().checkAndLiberate(code);
+        ordering = registerManager.giveCurrentNumber();
+        state = registerManager.saveStateOfRegisters();
         for (int i = 0; i < caseStats.size(); i++) {
             cs = (CaseSequence) caseStats.elementAt(i);
             if (cs.getCaseConst() instanceof BooleanConstant) {
@@ -69,16 +67,16 @@ public class CaseStatement extends Statement {
         for (int i = 0; i < caseStats.size(); i++) {
             code.addLabel("case" + n + "_b" + i);
             cs = (CaseSequence) caseStats.elementAt(i);
-            cs.getBlock().generateCode();
-            rm.storeLoadedVars(ordering);
-            rm.recoverStateOfRegisters(state);
+            cs.getBlock().generateCode(code, registerManager);
+            registerManager.storeLoadedVars(ordering, code);
+            registerManager.recoverStateOfRegisters(state, code);
             code.addSentence("b case" + n + "_end");
         }
         if (elseBlock != null) {
             code.addLabel("case" + n + "_else");
-            elseBlock.generateCode();
-            rm.storeLoadedVars(ordering);
-            rm.recoverStateOfRegisters(state);
+            elseBlock.generateCode(code, registerManager);
+            registerManager.storeLoadedVars(ordering, code);
+            registerManager.recoverStateOfRegisters(state, code);
         }
         code.addLabel("case" + n + "_end");
     }

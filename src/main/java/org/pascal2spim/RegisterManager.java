@@ -1,13 +1,12 @@
 package org.pascal2spim;
 
 public class RegisterManager {
-    private static RegisterManager instance;
     int n = 0; //number used to identify the order of loaded variables
     private Register[] registers;
     private Register[] fregisters;
     private Register fResult = null, iResult = null;
 
-    private RegisterManager() {
+    public RegisterManager() {
         registers = new Register[20];
         fregisters = new Register[15];
 		/*for(int i = 0; i < 2; i++)
@@ -31,12 +30,6 @@ public class RegisterManager {
         fResult = new Register("$f30", true);
     }
 
-    public static RegisterManager getInstance() {
-        if (instance == null)
-            instance = new RegisterManager();
-        return instance;
-    }
-
     public int giveNumber() {
         int result = n;
         n++;
@@ -47,7 +40,7 @@ public class RegisterManager {
         return n;
     }
 
-    public Register getFreeRegister() {
+    public Register getFreeRegister(Code code) {
         boolean found = false;
         Register result = null;
         int i = 0;
@@ -65,7 +58,7 @@ public class RegisterManager {
                 if ((registers[i].getVariable() != null) && (!registers[i].getNotStore())) {
                     found = true;
                     result = registers[i];
-                    registers[i].liberate();
+                    registers[i].liberate(code);
                     registers[i].reserve();
                 } else
                     i++;
@@ -74,7 +67,7 @@ public class RegisterManager {
         return result;
     }
 
-    public Register getFreeFloatRegister() {
+    public Register getFreeFloatRegister(Code code) {
         boolean found = false;
         Register result = null;
         int i = 0;
@@ -93,7 +86,7 @@ public class RegisterManager {
                 if ((fregisters[i].getVariable() != null) && (!fregisters[i].getNotStore())) {
                     found = true;
                     result = fregisters[i];
-                    fregisters[i].liberate();
+                    fregisters[i].liberate(code);
                     fregisters[i].reserve();
                 } else
                     i++;
@@ -132,16 +125,16 @@ public class RegisterManager {
         return result;
     }
 
-    public void storeLoadedVars(int startNumber) {
+    public void storeLoadedVars(int startNumber, Code code) {
         for (int i = 0; i < registers.length; i++) {
             if (registers[i].getVariable() != null)
                 if (registers[i].getOrdering() >= startNumber)
-                    registers[i].liberate();
+                    registers[i].liberate(code);
         }
         for (int i = 0; i < fregisters.length; i++) {
             if (fregisters[i].getVariable() != null)
                 if (fregisters[i].getOrdering() >= startNumber)
-                    fregisters[i].liberate();
+                    fregisters[i].liberate(code);
         }
         n = startNumber;
     }
@@ -157,17 +150,16 @@ public class RegisterManager {
         return result;
     }
 
-    public void recoverStateOfRegisters(Register[] state) {
+    public void recoverStateOfRegisters(Register[] state, Code code) {
         Register rg;
-        Code code = Code.getInstance();
         Variable aux = null;
         for (int i = 0; i < registers.length; i++) {
             if (state[i].getVariable() != null) {
                 if ((registers[i].getVariable() == null) || (!registers[i].getVariable().isEqualTo(state[i].getVariable()))) {
                     rg = getRegisterOfVar(state[i].getVariable());
                     if (rg != null)
-                        rg.liberate();
-                    registers[i].liberate();
+                        rg.liberate(code);
+                    registers[i].liberate(code);
                     registers[i].reserve();
                     registers[i].setVariable(state[i].getVariable(), state[i].getOrdering());
                     aux = (Variable) state[i].getVariable().getDescription().getObject();
@@ -184,8 +176,8 @@ public class RegisterManager {
                 if ((fregisters[i].getVariable() == null) || (!fregisters[i].getVariable().isEqualTo(state[registers.length + i].getVariable()))) {
                     rg = getRegisterOfVar(state[registers.length + i].getVariable());
                     if (rg != null)
-                        rg.liberate();
-                    fregisters[i].liberate();
+                        rg.liberate(code);
+                    fregisters[i].liberate(code);
                     fregisters[i].reserve();
                     fregisters[i].setVariable(state[registers.length + i].getVariable(), state[registers.length + i].getOrdering());
                     aux = (Variable) state[registers.length + i].getVariable().getDescription().getObject();
@@ -199,44 +191,43 @@ public class RegisterManager {
         }
     }
 
-    public void saveVariables() {
+    public void saveVariables(Code code) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].liberate();
+            registers[i].liberate(code);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].liberate();
+            fregisters[i].liberate(code);
         }
     }
 
-    public void saveRegisters() {
+    public void saveRegisters(Code code) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].save();
+            registers[i].save(code);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].save();
+            fregisters[i].save(code);
         }
     }
 
-    public void saveGlobalVariables() {
+    public void saveGlobalVariables(Code code) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].liberateIfGlobalVariable();
+            registers[i].liberateIfGlobalVariable(code);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].liberateIfGlobalVariable();
+            fregisters[i].liberateIfGlobalVariable(code);
         }
     }
 
-    public void reloadGlobalVariables() {
+    public void reloadGlobalVariables(Code code) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].reloadIfGlobalVariable();
+            registers[i].reloadIfGlobalVariable(code);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].reloadIfGlobalVariable();
+            fregisters[i].reloadIfGlobalVariable(code);
         }
     }
 
-    public Register[] storeInStack() {
-        Code code = Code.getInstance();
+    public Register[] storeInStack(Code code) {
         Register[] result = saveStateOfRegisters();
         for (int i = 0; i < registers.length; i++) {
             if (!registers[i].getFree()) {
@@ -255,8 +246,7 @@ public class RegisterManager {
         return result;
     }
 
-    public void recoverFromStack(Register[] state) {
-        Code code = Code.getInstance();
+    public void recoverFromStack(Register[] state, Code code) {
         for (int i = (fregisters.length - 1); i >= 0; i--) {
             if (!state[registers.length + i].getFree()) {
                 code.addSentence("l.d " + fregisters[i].getName() + ", ($sp)");

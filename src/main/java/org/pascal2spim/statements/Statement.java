@@ -1,5 +1,8 @@
 package org.pascal2spim.statements;
 
+import org.pascal2spim.Code;
+import org.pascal2spim.RegisterManager;
+
 public abstract class Statement {
     protected int line;
     protected int column;
@@ -20,7 +23,7 @@ public abstract class Statement {
         column = c;
     }
 
-    abstract public void generateCode();
+    abstract public void generateCode(Code code, RegisterManager registerManager);
 
     public Statement hasReturnStatement() {
         return null;

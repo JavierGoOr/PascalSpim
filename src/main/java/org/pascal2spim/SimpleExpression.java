@@ -57,28 +57,26 @@ public class SimpleExpression {
         return typeAux;
     }
 
-    public void generateCode() {
-        RegisterManager rm = RegisterManager.getInstance();
-        Code code = Code.getInstance();
+    public void generateCode(Code code, RegisterManager registerManager) {
         String assemblyOp;
         Operator op;
         Register r1 = null, r2 = null;
         boolean fpoint = false;
         Term t2;
-        firstTerm.generateCode();
+        firstTerm.generateCode(code, registerManager);
         register = firstTerm.getRegister();
         if (firstOperator != null) {
             if (firstOperator.getKind().compareTo("-") == 0) {
                 if (register.isFPoint()) {
                     register.setNotStore(true);
-                    Register raux_int = rm.getFreeRegister();
-                    Register raux_float = rm.getFreeFloatRegister();
+                    Register raux_int = registerManager.getFreeRegister(code);
+                    Register raux_float = registerManager.getFreeFloatRegister(code);
                     code.addSentence("li " + raux_int.getName() + ", -1");
                     code.addSentence("mtc1 " + raux_int.getName() + ", " + raux_float.getName());
                     code.addSentence("cvt.d.w " + raux_float.getName() + ", " + raux_float.getName());
                     code.addSentence("mul.d " + register.getName() + ", " + register.getName() + ", " + raux_float.getName());
-                    raux_int.checkAndLiberate();
-                    raux_float.checkAndLiberate();
+                    raux_int.checkAndLiberate(code);
+                    raux_float.checkAndLiberate(code);
                 } else
                     code.addSentence("mul " + register.getName() + ", " + register.getName() + ", -1");
             }
@@ -88,32 +86,32 @@ public class SimpleExpression {
             op = (Operator) otherTerms.elementAt(i);
             t2 = (Term) otherTerms.elementAt(i + 1);
             register.setNotStore(true);
-            t2.generateCode();
+            t2.generateCode(code, registerManager);
             r1 = register;
             r2 = t2.getRegister();
             register.setNotStore(false);
             if (register.isFPoint() || t2.getRegister().isFPoint()) {
                 fpoint = true;
                 if (!register.isFPoint()) {
-                    r1 = rm.getFreeFloatRegister();
+                    r1 = registerManager.getFreeFloatRegister(code);
                     code.addSentence("mtc1 " + register.getName() + ", " + r1.getName());
                     code.addSentence("cvt.d.w " + r1.getName() + ", " + r1.getName());
                 }
                 if (!t2.getRegister().isFPoint()) {
-                    r2 = rm.getFreeFloatRegister();
+                    r2 = registerManager.getFreeFloatRegister(code);
                     code.addSentence("mtc1 " + t2.getRegister().getName() + ", " + r2.getName());
                     code.addSentence("cvt.d.w " + r2.getName() + ", " + r2.getName());
                 }
-                r1.checkAndLiberate();
-                r2.checkAndLiberate();
+                r1.checkAndLiberate(code);
+                r2.checkAndLiberate(code);
             }
-            register.checkAndLiberate();
-            t2.getRegister().checkAndLiberate();
+            register.checkAndLiberate(code);
+            t2.getRegister().checkAndLiberate(code);
             assemblyOp = op.getAssemblyOp(fpoint);
             if (fpoint)
-                register = rm.getFreeFloatRegister();
+                register = registerManager.getFreeFloatRegister(code);
             else
-                register = rm.getFreeRegister();
+                register = registerManager.getFreeRegister(code);
             code.addSentence(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
         }
     }
