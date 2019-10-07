@@ -2,10 +2,11 @@ package org.pascal2spim;
 
 import org.pascal2spim.types.*;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class FunctOrProc implements SymbolTableObject {
-    protected Vector parameters = new Vector();
+    protected List<SymbolTableEntry> parameters = new ArrayList<>();
     protected Block block;
     protected String scope;
     protected String specialFunc = null;
@@ -27,7 +28,7 @@ public abstract class FunctOrProc implements SymbolTableObject {
     }
 
     public SymbolTableEntry getParameter(int n) {
-        return (SymbolTableEntry) parameters.elementAt(n);
+        return parameters.get(n);
     }
 
     public Block getBlock() {
@@ -49,7 +50,7 @@ public abstract class FunctOrProc implements SymbolTableObject {
         boolean onePar = false;
         for (int i = 0; i < parameters.size(); i++) {
             onePar = true;
-            ste = (SymbolTableEntry) parameters.elementAt(i);
+            ste = parameters.get(i);
             v = (Variable) ste.getObject();
             result = result + v.getType() + ", ";
         }
@@ -143,15 +144,15 @@ public abstract class FunctOrProc implements SymbolTableObject {
     //Store in the variables the positions in memory where they have to be placed
     public int indexVariables() {
         SymbolTable st = SymbolTable.getInstance();
-        Vector localVariables = st.getLocalVariables(scope);
+        List<SymbolTableEntry> localVariables = st.getLocalVariables(scope);
         int totalSpace = 0;
         SymbolTableEntry ste;
         Variable v;
         int varspace = 0;
         if (localVariables == null)
-            localVariables = new Vector();
+            localVariables = new ArrayList<>();
         for (int i = 0; i < localVariables.size(); i++) {
-            ste = (SymbolTableEntry) localVariables.elementAt(i);
+            ste = localVariables.get(i);
             v = (Variable) ste.getObject();
             if (v.getIsParameter()) {
                 if ((v.getType() instanceof BooleanType) ||
@@ -203,37 +204,36 @@ public abstract class FunctOrProc implements SymbolTableObject {
 		}
 		if(parameters.size() > regCounter) //there are parameters in stack
 		{*/
-        int displ = 0;
-        Vector stackdispl = new Vector();
-        Vector inversedispl = new Vector();
+        List<Integer> stackdispl = new ArrayList<>();
+        List<Integer> inversedispl = new ArrayList<>();
         for (int i = 0; i < parameters.size(); i++) //get displacements
         {
-            ste = (SymbolTableEntry) parameters.elementAt(i);
+            ste = parameters.get(i);
             v = (Variable) ste.getObject();
             //if(!inRegister[i])
             //{
             if (v.getType() instanceof RealType)
-                stackdispl.add(new Integer(8));
+                stackdispl.add(8);
             else
-                stackdispl.add(new Integer(4));
+                stackdispl.add(4);
             //}
         }
-        displ = 0;
+        int displ = 0;
         int aux, counter = 0;
         for (int i = (stackdispl.size() - 1); i >= 0; i--) //accumulate them
         {
             inversedispl.add(displ);
-            aux = ((Integer) stackdispl.elementAt(i)).intValue();
+            aux = stackdispl.get(i);
             displ += aux;
         }
         Register raux;
         for (int i = 0; i < parameters.size(); i++) //load parameters
         {
-            ste = (SymbolTableEntry) parameters.elementAt(i);
+            ste = parameters.get(i);
             v = (Variable) ste.getObject();
             //if(!inRegister[i])
             //{
-            aux = ((Integer) inversedispl.elementAt(parameters.size() - counter - 1)).intValue();
+            aux = inversedispl.get(parameters.size() - counter - 1);
             counter++;
             if (v.getType() instanceof RealType) {
                 raux = registerManager.getFreeFloatRegister(code);

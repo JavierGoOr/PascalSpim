@@ -1,6 +1,6 @@
 package org.pascal2spim;
 
-import java.util.Vector;
+import java.util.List;
 
 public class SymbolTable {
     private static SymbolTable instance;
@@ -50,7 +50,7 @@ public class SymbolTable {
         this.error = error;
     }
 
-    public Vector getLocalVariables(String scope) {
+    public List<SymbolTableEntry> getLocalVariables(String scope) {
         return namespace.getLocalVariables(scope);
     }
 }

@@ -2,6 +2,8 @@ package org.pascal2spim;
 
 import org.pascal2spim.types.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 public class Namespace {
@@ -56,8 +58,8 @@ public class Namespace {
         }
     }
 
-    public Vector getLocalVariables(String fscope) {
-        Vector result = new Vector();
+    public List<SymbolTableEntry> getLocalVariables(String fscope) {
+        List<SymbolTableEntry> result = new ArrayList<>();
         if (scope.compareTo(fscope) != 0) {
             String subscope = fscope.substring(scope.length() + 1);
             int sc;
@@ -71,10 +73,10 @@ public class Namespace {
                 if (nm != null)
                     result = nm.getLocalVariables(fscope);
                 else
-                    result = new Vector();
+                    result = new ArrayList<>();
             }
         } else {
-            result = new Vector();
+            result = new ArrayList<>();
             SymbolTableEntry entry;
             Variable v;
             for (int i = 0; i < symbols.size(); i++) {
