@@ -2,20 +2,17 @@ package org.pascal2spim;
 
 import org.pascal2spim.statements.Statement;
 
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Block {
-    private Vector functsProcs = new Vector();
+    private List<SymbolTableEntry> functsProcs = new ArrayList<>();
     private Statement statements;
     private String fname = null;
 
     public Block() {
     }
 
-    /*public Block(Statement statements)
-    {
-        this.statements = statements;
-    }*/
     public Block(String fname) {
         this.fname = fname;
     }
@@ -34,7 +31,6 @@ public class Block {
     }
 
     public void generateCode(Code code, RegisterManager registerManager) {
-        SymbolTableEntry ste;
         FunctOrProc fp;
         statements.generateCode(code, registerManager);
         registerManager.saveVariables(code);
@@ -42,8 +38,7 @@ public class Block {
             code.addSentence("li $v0, 10");
             code.addSentence("syscall");
         }
-        for (int i = 0; i < functsProcs.size(); i++) {
-            ste = (SymbolTableEntry) functsProcs.elementAt(i);
+        for (SymbolTableEntry ste : functsProcs) {
             fp = (FunctOrProc) ste.getObject();
             fp.generateCode(ste.getName(), code, registerManager);
         }
