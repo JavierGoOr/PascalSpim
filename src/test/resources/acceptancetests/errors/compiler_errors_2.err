@@ -1,0 +1,27 @@
+ParseException: Encountered " ")" ") "" at line 4, column 13.
+Was expecting:
+    <ID> ...
+    
+Error at line 6, column 9 : identifier "f1" is not defined
+
+Error at line 7, column 1 : function "f1" has no return statement
+
+Error at line 14, column 17 : return statement is not placed at the last line of the function
+
+Error at line 18, column 9 : identifier "f1" is not defined
+
+Error at line 19, column 1 : function "factorial" has no return statement
+
+Error at line 24, column 17 : incompatible types : at CASE constant
+found : char
+required : integer
+
+Error at line 29, column 25 : incompatible types : at assignment
+found : real
+required : integer
+
+Error at line 31, column 9 : return statement without a function
+
+Error at line 32, column 14 : type real cannot be used in a case statement
+
+Process finished with errors

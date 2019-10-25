@@ -63,21 +63,50 @@ public class AcceptanceTest {
         assertThat(actualAssembly).isEqualToIgnoringNewLines(expectedAssembly);
     }
 
+    @Test
+    @Parameters({"compiler_errors_1", "compiler_errors_2", "compiler_errors_3", "compiler_errors_4"})
+    public void should_produce_compiler_errors(final String programName) throws Exception {
+
+        //given
+        File outputAssemblyFile = getOutputAssemblyFile();
+        File pascalFile = getPascalFile(programName);
+        String expectedCompilerErrors = getExpectedCompilerErrors(programName);
+        changeSystemDefaultsToCaptureOutput();
+
+        //when
+        compile(pascalFile, outputAssemblyFile);
+        String actualCompilerErrors = getCompilerExecutionOutput();
+
+        //then
+        assertThat(actualCompilerErrors).isEqualToIgnoringNewLines(expectedCompilerErrors);
+    }
+
     private File getPascalFile(final String programName) throws URISyntaxException {
         URL resource = classloader.getResource("acceptancetests/input/" + programName + ".pas");
         return Paths.get(resource.toURI()).toFile();
     }
 
     private String getExpectedOutput(final String programName) throws IOException, URISyntaxException {
-        URL urlForExpectedOutput = classloader.getResource("acceptancetests/output/" + programName + ".out");
+        return readFile("acceptancetests/output/" + programName + ".out");
+    }
+
+    private String getExpectedCompilerErrors(String programName) throws IOException, URISyntaxException {
+        return readFile("acceptancetests/errors/" + programName + ".err");
+    }
+
+    private String getExpectedAssembly(final String programName) throws IOException, URISyntaxException {
+        return readFile("acceptancetests/assembly/" + programName + ".s");
+    }
+
+    private String readFile(String filePath) throws IOException, URISyntaxException {
+        URL urlForExpectedOutput = classloader.getResource(filePath);
         Path pathForExpectedOutput = Paths.get(urlForExpectedOutput.toURI());
         return readFile(pathForExpectedOutput);
     }
 
-    private String getExpectedAssembly(final String programName) throws IOException, URISyntaxException {
-        URL urlForExpectedAssembly = classloader.getResource("acceptancetests/assembly/" + programName + ".s");
-        Path pathForExpectedAssembly = Paths.get(urlForExpectedAssembly.toURI());
-        return readFile(pathForExpectedAssembly);
+    private String readFile(Path pathToFile) throws IOException {
+        Stream<String> lines = Files.lines(pathToFile);
+        return lines.collect(Collectors.joining("\n"));
     }
 
     private File getOutputAssemblyFile() throws IOException {
@@ -90,13 +119,8 @@ public class AcceptanceTest {
         PascalSpim.launch(new String[]{pascalFile.getAbsolutePath(), outputAssemblyFile.getAbsolutePath()});
     }
 
-    private String readFile(Path pathToFile) throws IOException {
-        Stream<String> lines = Files.lines(pathToFile);
-        return lines.collect(Collectors.joining("\n"));
-    }
-
     private String executeAssembly(File outputAssemblyFile) {
-        changeSystemDefaultsForMARS();
+        changeSystemDefaultsToCaptureOutput();
         executeWithMARS(outputAssemblyFile);
         restoreSystemDefaults();
         return getMARSExecutionOutput();
@@ -110,6 +134,12 @@ public class AcceptanceTest {
         }
     }
 
+    private String getCompilerExecutionOutput() {
+        String actualCompilerErrors = outContent.toString();
+        restoreSystemDefaults();
+        return actualCompilerErrors;
+    }
+
     private String getMARSExecutionOutput() {
         String completeOutput = outContent.toString();
         int startExecutionOutput = completeOutput.indexOf("\r\n") + 1;
@@ -118,7 +148,7 @@ public class AcceptanceTest {
         return completeOutput.substring(startExecutionOutput, endExecutionOutput);
     }
 
-    private void changeSystemDefaultsForMARS() {
+    private void changeSystemDefaultsToCaptureOutput() {
         System.setOut(new PrintStream(outContent));
         System.setSecurityManager(new IgnoreExitManager());
     }
