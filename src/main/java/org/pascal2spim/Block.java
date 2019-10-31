@@ -30,23 +30,23 @@ public class Block {
         functsProcs.add(functProc);
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         FunctOrProc fp;
-        statements.generateCode(code, registerManager);
-        registerManager.saveVariables(code);
+        statements.generateCode(generatedAssembly, registerManager);
+        registerManager.saveVariables(generatedAssembly);
         if ((fname != null) && (fname.compareTo("1") == 0)) {
-            code.addSentence("li $v0, 10");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("li $v0, 10");
+            generatedAssembly.addCodeLine("syscall");
         }
         for (SymbolTableEntry ste : functsProcs) {
             fp = (FunctOrProc) ste.getObject();
-            fp.generateCode(ste.getName(), code, registerManager);
+            fp.generateCode(ste.getName(), generatedAssembly, registerManager);
         }
         if ((fname != null) && (fname.compareTo("1") == 0)) {
-            code.addDataSentence("\tw_ln:\t.asciiz \"\\n\"");
-            code.addDataSentence("\tw_char:\t.asciiz \"\\n\"");
-            code.addDataSentence("\tw_true:\t.asciiz \"true\"");
-            code.addDataSentence("\tw_false:\t.asciiz \"false\"");
+            generatedAssembly.addDataDefinition("\tw_ln:\t.asciiz \"\\n\"");
+            generatedAssembly.addDataDefinition("\tw_char:\t.asciiz \"\\n\"");
+            generatedAssembly.addDataDefinition("\tw_true:\t.asciiz \"true\"");
+            generatedAssembly.addDataDefinition("\tw_false:\t.asciiz \"false\"");
         }
     }
 }

@@ -93,50 +93,50 @@ public class IndexedVariable extends VariableApparition {
         return (tp.getDimensionMax(n) - tp.getDimensionMin(n) + 1);
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
-        generateCode(code, registerManager, false);
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
+        generateCode(generatedAssembly, registerManager, false);
     }
 
-    public void generateCode(Code code, RegisterManager registerManager, boolean onlyIndex) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager, boolean onlyIndex) {
         ArrayType tp = (ArrayType) getIndexedType();
         Register regAux, varReg = null;
         int i = 0;
         Expression e1 = this.getIndex(0), e2;
         if (indexedVar instanceof IndexedVariable) {
             IndexedVariable iv = (IndexedVariable) indexedVar;
-            iv.generateCode(code, registerManager);
+            iv.generateCode(generatedAssembly, registerManager);
             indexReg = iv.indexReg;
             indexReg.setNotStore(true);
             if (iv.getElementsLastDim() > 1)
-                code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", " + iv.getElementsLastDim());
+                generatedAssembly.addCodeLine("mul " + indexReg.getName() + ", " + indexReg.getName() + ", " + iv.getElementsLastDim());
         }
-        e1.generateCode(code, registerManager);
-        e1.getRegister().checkAndLiberate(code);
+        e1.generateCode(generatedAssembly, registerManager);
+        e1.getRegister().checkAndLiberate(generatedAssembly);
         if (indexReg == null) {
-            indexReg = registerManager.getFreeRegister(code);
-            code.addSentence("move " + indexReg.getName() + ", " + e1.getRegister().getName());
+            indexReg = registerManager.getFreeRegister(generatedAssembly);
+            generatedAssembly.addCodeLine("move " + indexReg.getName() + ", " + e1.getRegister().getName());
         } else {
             indexReg.setNotStore(false);
-            code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + e1.getRegister().getName());
+            generatedAssembly.addCodeLine("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + e1.getRegister().getName());
         }
         if (tp.getDimensionMin(0) != 0)
-            code.addSentence("sub " + indexReg.getName() + ", " + indexReg.getName() + ", " + tp.getDimensionMin(0));
+            generatedAssembly.addCodeLine("sub " + indexReg.getName() + ", " + indexReg.getName() + ", " + tp.getDimensionMin(0));
         for (i = 1; i < indices.size(); i++) {
             if (tp.getDimensionMax(i) != tp.getDimensionMin(i))
-                code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", " + (tp.getDimensionMax(i) - tp.getDimensionMin(i) + 1));
+                generatedAssembly.addCodeLine("mul " + indexReg.getName() + ", " + indexReg.getName() + ", " + (tp.getDimensionMax(i) - tp.getDimensionMin(i) + 1));
             e2 = this.getIndex(i);
             indexReg.setNotStore(true);
-            e2.generateCode(code, registerManager);
+            e2.generateCode(generatedAssembly, registerManager);
             indexReg.setNotStore(false);
-            e2.getRegister().checkAndLiberate(code);
-            code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + e2.getRegister().getName());
+            e2.getRegister().checkAndLiberate(generatedAssembly);
+            generatedAssembly.addCodeLine("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + e2.getRegister().getName());
             if (tp.getDimensionMin(i) != 0)
-                code.addSentence("sub " + indexReg.getName() + ", " + indexReg.getName() + ", " + tp.getDimensionMin(i));
+                generatedAssembly.addCodeLine("sub " + indexReg.getName() + ", " + indexReg.getName() + ", " + tp.getDimensionMin(i));
         }
         if (!(indexedVar instanceof IndexedVariable)) {
             varReg = null;
             if (((ArrayType) indexedVar.getType()).getFinalElsType() instanceof RealType)
-                varReg = registerManager.getFreeFloatRegister(code);
+                varReg = registerManager.getFreeFloatRegister(generatedAssembly);
             else
                 varReg = indexReg;
             indexedVar.setRegister(varReg, registerManager);
@@ -147,36 +147,36 @@ public class IndexedVariable extends VariableApparition {
             VariableApparition va = getVarApparition();
             Variable v = (Variable) va.getDescription().getObject();
             varReg = va.getRegister();
-            Register reg = registerManager.getFreeRegister(code);
+            Register reg = registerManager.getFreeRegister(generatedAssembly);
             if (varReg.isFPoint()) {
-                code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", 8");
+                generatedAssembly.addCodeLine("mul " + indexReg.getName() + ", " + indexReg.getName() + ", 8");
                 if (v.getIsLocal()) {
                     if (v.getIsParameter())
-                        code.addSentence("lw " + reg.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("lw " + reg.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
                     else
-                        code.addSentence("add " + reg.getName() + ", $fp, " + (v.getDisplacement() * -1));
+                        generatedAssembly.addCodeLine("add " + reg.getName() + ", $fp, " + (v.getDisplacement() * -1));
                 } else {
-                    code.addSentence("la " + reg.getName() + ", _" + indexedVar.getDescription().getName());
+                    generatedAssembly.addCodeLine("la " + reg.getName() + ", _" + indexedVar.getDescription().getName());
                 }
-                reg.liberate(code);
-                code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + reg.getName());
+                reg.liberate(generatedAssembly);
+                generatedAssembly.addCodeLine("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + reg.getName());
                 if (!onlyIndex) {
-                    code.addSentence("l.d " + varReg.getName() + ", (" + indexReg.getName() + ")");
+                    generatedAssembly.addCodeLine("l.d " + varReg.getName() + ", (" + indexReg.getName() + ")");
                 }
             } else {
-                code.addSentence("mul " + indexReg.getName() + ", " + indexReg.getName() + ", 4");
+                generatedAssembly.addCodeLine("mul " + indexReg.getName() + ", " + indexReg.getName() + ", 4");
                 if (v.getIsLocal()) {
                     if (v.getIsParameter())
-                        code.addSentence("lw " + reg.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("lw " + reg.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
                     else
-                        code.addSentence("add " + reg.getName() + ", $fp, " + (v.getDisplacement() * -1));
+                        generatedAssembly.addCodeLine("add " + reg.getName() + ", $fp, " + (v.getDisplacement() * -1));
                 } else {
-                    code.addSentence("la " + reg.getName() + ", _" + indexedVar.getDescription().getName());
+                    generatedAssembly.addCodeLine("la " + reg.getName() + ", _" + indexedVar.getDescription().getName());
                 }
-                reg.liberate(code);
-                code.addSentence("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + reg.getName());
+                reg.liberate(generatedAssembly);
+                generatedAssembly.addCodeLine("add " + indexReg.getName() + ", " + indexReg.getName() + ", " + reg.getName());
                 if (!onlyIndex)
-                    code.addSentence("lw " + varReg.getName() + ", (" + indexReg.getName() + ")");
+                    generatedAssembly.addCodeLine("lw " + varReg.getName() + ", (" + indexReg.getName() + ")");
             }
         }
     }

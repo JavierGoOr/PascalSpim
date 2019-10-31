@@ -1,6 +1,6 @@
 package org.pascal2spim.constants;
 
-import org.pascal2spim.Code;
+import org.pascal2spim.GeneratedAssembly;
 import org.pascal2spim.RegisterManager;
 import org.pascal2spim.types.BooleanType;
 
@@ -30,13 +30,13 @@ public class BooleanConstant extends Constant {
             return "false";
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         int boolValue;
-        register = registerManager.getFreeRegister(code);
+        register = registerManager.getFreeRegister(generatedAssembly);
         if (value)
             boolValue = 1;
         else
             boolValue = 0;
-        code.addSentence("li " + register.getName() + ", " + boolValue);
+        generatedAssembly.addCodeLine("li " + register.getName() + ", " + boolValue);
     }
 }

@@ -60,85 +60,85 @@ public abstract class FunctOrProc implements SymbolTableObject {
             return "()";
     }
 
-    public void generateCode(String funcName, Code code, RegisterManager registerManager) {
+    public void generateCode(String funcName, GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         int space;
-        code.addLabel("_" + funcName);
-        code.addSentence("subu $sp, $sp, 8");
-        code.addSentence("sw $ra, 4($sp)");
-        code.addSentence("sw $fp, 0($sp)");
-        code.addSentence("addu $fp, $sp, 8");
+        generatedAssembly.addLabel("_" + funcName);
+        generatedAssembly.addCodeLine("subu $sp, $sp, 8");
+        generatedAssembly.addCodeLine("sw $ra, 4($sp)");
+        generatedAssembly.addCodeLine("sw $fp, 0($sp)");
+        generatedAssembly.addCodeLine("addu $fp, $sp, 8");
         space = indexVariables();
-        takeParameters(code, registerManager);
-        code.addSentence("subu $sp, $sp, " + space);
+        takeParameters(generatedAssembly, registerManager);
+        generatedAssembly.addCodeLine("subu $sp, $sp, " + space);
         if (specialFunc == null)
-            block.generateCode(code, registerManager);
+            block.generateCode(generatedAssembly, registerManager);
         else if (specialFunc.compareTo("writeint") == 0) {
-            code.addSentence("lw $a0, -12($fp)");
-            code.addSentence("li $v0, 1");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("lw $a0, -12($fp)");
+            generatedAssembly.addCodeLine("li $v0, 1");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writeintln") == 0) {
-            code.addSentence("lw $a0, -12($fp)");
-            code.addSentence("li $v0, 1");
-            code.addSentence("syscall");
-            code.addSentence("la $a0, w_ln");
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("lw $a0, -12($fp)");
+            generatedAssembly.addCodeLine("li $v0, 1");
+            generatedAssembly.addCodeLine("syscall");
+            generatedAssembly.addCodeLine("la $a0, w_ln");
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writereal") == 0) {
-            code.addSentence("l.d $f12, -16($fp)");
-            code.addSentence("li $v0, 3");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("l.d $f12, -16($fp)");
+            generatedAssembly.addCodeLine("li $v0, 3");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writerealln") == 0) {
-            code.addSentence("l.d $f12, -16($fp)");
-            code.addSentence("li $v0, 3");
-            code.addSentence("syscall");
-            code.addSentence("la $a0, w_ln");
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("l.d $f12, -16($fp)");
+            generatedAssembly.addCodeLine("li $v0, 3");
+            generatedAssembly.addCodeLine("syscall");
+            generatedAssembly.addCodeLine("la $a0, w_ln");
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writechar") == 0) {
-            code.addSentence("la $a0, w_char");
-            code.addSentence("lw $v1, -12($fp)");
-            code.addSentence("sb $v1, ($a0)");
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("la $a0, w_char");
+            generatedAssembly.addCodeLine("lw $v1, -12($fp)");
+            generatedAssembly.addCodeLine("sb $v1, ($a0)");
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writecharln") == 0) {
-            code.addSentence("la $a0, w_char");
-            code.addSentence("lw $v1, -12($fp)");
-            code.addSentence("sb $v1, ($a0)");
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
-            code.addSentence("la $a0, w_ln");
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
+            generatedAssembly.addCodeLine("la $a0, w_char");
+            generatedAssembly.addCodeLine("lw $v1, -12($fp)");
+            generatedAssembly.addCodeLine("sb $v1, ($a0)");
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
+            generatedAssembly.addCodeLine("la $a0, w_ln");
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writeboolean") == 0) {
-            int n = code.getConsecutive();
-            code.addSentence("lw $a0, -12($fp)");
-            code.addSentence("beqz $a0, __else" + n);
-            code.addSentence("la $a0, w_true");
-            code.addSentence("b __ifend" + n);
-            code.addLabel("__else" + n);
-            code.addSentence("la $a0, w_false");
-            code.addLabel("__ifend" + n);
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
+            int n = generatedAssembly.giveSequenceValue();
+            generatedAssembly.addCodeLine("lw $a0, -12($fp)");
+            generatedAssembly.addCodeLine("beqz $a0, __else" + n);
+            generatedAssembly.addCodeLine("la $a0, w_true");
+            generatedAssembly.addCodeLine("b __ifend" + n);
+            generatedAssembly.addLabel("__else" + n);
+            generatedAssembly.addCodeLine("la $a0, w_false");
+            generatedAssembly.addLabel("__ifend" + n);
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
         } else if (specialFunc.compareTo("writebooleanln") == 0) {
-            int n = code.getConsecutive();
-            code.addSentence("lw $a0, -12($fp)");
-            code.addSentence("beqz $a0, __else" + n);
-            code.addSentence("la $a0, w_true");
-            code.addSentence("b __ifend" + n);
-            code.addLabel("__else" + n);
-            code.addSentence("la $a0, w_false");
-            code.addLabel("__ifend" + n);
-            code.addSentence("li $v0, 4");
-            code.addSentence("syscall");
-            code.addSentence("la $a0, w_ln");
-            code.addSentence("syscall");
+            int n = generatedAssembly.giveSequenceValue();
+            generatedAssembly.addCodeLine("lw $a0, -12($fp)");
+            generatedAssembly.addCodeLine("beqz $a0, __else" + n);
+            generatedAssembly.addCodeLine("la $a0, w_true");
+            generatedAssembly.addCodeLine("b __ifend" + n);
+            generatedAssembly.addLabel("__else" + n);
+            generatedAssembly.addCodeLine("la $a0, w_false");
+            generatedAssembly.addLabel("__ifend" + n);
+            generatedAssembly.addCodeLine("li $v0, 4");
+            generatedAssembly.addCodeLine("syscall");
+            generatedAssembly.addCodeLine("la $a0, w_ln");
+            generatedAssembly.addCodeLine("syscall");
         }
-        registerManager.saveVariables(code);
-        code.addSentence("lw $ra, -4($fp)");
-        code.addSentence("move $sp, $fp");
-        code.addSentence("lw $fp, -8($fp)");
-        code.addSentence("jr $ra");
+        registerManager.saveVariables(generatedAssembly);
+        generatedAssembly.addCodeLine("lw $ra, -4($fp)");
+        generatedAssembly.addCodeLine("move $sp, $fp");
+        generatedAssembly.addCodeLine("lw $fp, -8($fp)");
+        generatedAssembly.addCodeLine("jr $ra");
     }
 
     //Store in the variables the positions in memory where they have to be placed
@@ -184,7 +184,7 @@ public abstract class FunctOrProc implements SymbolTableObject {
         return totalSpace;
     }
 
-    public void takeParameters(Code code, RegisterManager registerManager) {
+    public void takeParameters(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         SymbolTableEntry ste;
         Variable v;
         int regCounter = 0;
@@ -236,15 +236,15 @@ public abstract class FunctOrProc implements SymbolTableObject {
             aux = inversedispl.get(parameters.size() - counter - 1);
             counter++;
             if (v.getType() instanceof RealType) {
-                raux = registerManager.getFreeFloatRegister(code);
-                code.addSentence("l.d " + raux.getName() + ", " + aux + "($fp)");
-                raux.liberate(code);
-                code.addSentence("s.d " + raux.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
+                raux = registerManager.getFreeFloatRegister(generatedAssembly);
+                generatedAssembly.addCodeLine("l.d " + raux.getName() + ", " + aux + "($fp)");
+                raux.liberate(generatedAssembly);
+                generatedAssembly.addCodeLine("s.d " + raux.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
             } else {
-                raux = registerManager.getFreeRegister(code);
-                code.addSentence("lw " + raux.getName() + ", " + aux + "($fp)");
-                raux.liberate(code);
-                code.addSentence("sw " + raux.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
+                raux = registerManager.getFreeRegister(generatedAssembly);
+                generatedAssembly.addCodeLine("lw " + raux.getName() + ", " + aux + "($fp)");
+                raux.liberate(generatedAssembly);
+                generatedAssembly.addCodeLine("sw " + raux.getName() + ", " + (v.getDisplacement() * -1) + "($fp)");
             }
             //}
         }

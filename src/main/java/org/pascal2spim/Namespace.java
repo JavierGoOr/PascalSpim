@@ -142,7 +142,7 @@ public class Namespace {
         return result;
     }
 
-    public void generateCode(Code code) {
+    public void generateCode(GeneratedAssembly generatedAssembly) {
         if (scope.compareTo("1") == 0) {
             String lineBegin;
             for (SymbolTableEntry entry : symbols) {
@@ -152,17 +152,17 @@ public class Namespace {
                     if ((var.getType() instanceof IntegerType) ||
                             (var.getType() instanceof CharType) ||
                             (var.getType() instanceof BooleanType)) {
-                        code.addDataSentence(lineBegin + ".word 0");
+                        generatedAssembly.addDataDefinition(lineBegin + ".word 0");
                     } else if (var.getType() instanceof RealType) {
-                        code.addDataSentence(lineBegin + ".double 0.0");
+                        generatedAssembly.addDataDefinition(lineBegin + ".double 0.0");
                     } else if (var.getType() instanceof ArrayType) {
                         ArrayType at = (ArrayType) var.getType();
                         if ((at.getFinalElsType() instanceof IntegerType) ||
                                 (at.getFinalElsType() instanceof CharType) ||
                                 (at.getFinalElsType() instanceof BooleanType)) {
-                            code.addDataSentence(lineBegin + ".word 0:" + at.getTotalNumberOfElements());
+                            generatedAssembly.addDataDefinition(lineBegin + ".word 0:" + at.getTotalNumberOfElements());
                         } else if (at.getFinalElsType() instanceof RealType) {
-                            code.addDataSentence(lineBegin + ".space " + (at.getTotalNumberOfElements() * 8));
+                            generatedAssembly.addDataDefinition(lineBegin + ".space " + (at.getTotalNumberOfElements() * 8));
                         }
                     }
                 }

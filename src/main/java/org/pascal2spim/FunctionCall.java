@@ -78,57 +78,57 @@ public class FunctionCall extends VariableApparition {
         return description.getName() + description.getObject();
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         int displ = 0, tdispl = 0;
         Expression e;
         Register reg;
         FunctOrProc f = (FunctOrProc) description.getObject();
         //rm.saveGlobalVariables();
-        registerManager.saveRegisters(code);
-        Register[] state = registerManager.storeInStack(code);
+        registerManager.saveRegisters(generatedAssembly);
+        Register[] state = registerManager.storeInStack(generatedAssembly);
         for (int i = 0; i < parameters.size(); i++) {
             e = (Expression) parameters.elementAt(i);
-            e.generateCode(code, registerManager);
+            e.generateCode(generatedAssembly, registerManager);
             reg = e.getRegister();
             Variable v = (Variable) f.getParameter(i).getObject();
             if (v.getType() instanceof ArrayType) {
                 displ = 4;
-                reg.checkAndLiberate(code);
-                code.addSentence("subu $sp, $sp, " + displ);
-                code.addSentence("sw " + reg.getName() + ", ($sp)");
+                reg.checkAndLiberate(generatedAssembly);
+                generatedAssembly.addCodeLine("subu $sp, $sp, " + displ);
+                generatedAssembly.addCodeLine("sw " + reg.getName() + ", ($sp)");
             } else if (v.getType() instanceof RealType) {
                 displ = 8;
-                reg.checkAndLiberate(code);
+                reg.checkAndLiberate(generatedAssembly);
                 Register aux;
-                code.addSentence("subu $sp, $sp, " + displ);
+                generatedAssembly.addCodeLine("subu $sp, $sp, " + displ);
                 if (reg.isFPoint()) {
-                    code.addSentence("s.d " + reg.getName() + ", ($sp)");
+                    generatedAssembly.addCodeLine("s.d " + reg.getName() + ", ($sp)");
                 } else {
-                    aux = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + reg.getName() + ", " + aux.getName());
-                    code.addSentence("cvt.d.w " + aux.getName() + ", " + aux.getName());
-                    aux.liberate(code);
-                    code.addSentence("s.d " + aux.getName() + ", ($sp)");
+                    aux = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + reg.getName() + ", " + aux.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + aux.getName() + ", " + aux.getName());
+                    aux.liberate(generatedAssembly);
+                    generatedAssembly.addCodeLine("s.d " + aux.getName() + ", ($sp)");
                 }
             } else {
                 displ = 4;
-                reg.checkAndLiberate(code);
-                code.addSentence("subu $sp, $sp, " + displ);
-                code.addSentence("sw " + reg.getName() + ", ($sp)");
+                reg.checkAndLiberate(generatedAssembly);
+                generatedAssembly.addCodeLine("subu $sp, $sp, " + displ);
+                generatedAssembly.addCodeLine("sw " + reg.getName() + ", ($sp)");
             }
             tdispl += displ;
         }
-        code.addSentence("jal _" + description.getName());
-        code.addSentence("addu $sp, $sp, " + tdispl);
-        registerManager.recoverFromStack(state, code);
-        registerManager.reloadGlobalVariables(code);
+        generatedAssembly.addCodeLine("jal _" + description.getName());
+        generatedAssembly.addCodeLine("addu $sp, $sp, " + tdispl);
+        registerManager.recoverFromStack(state, generatedAssembly);
+        registerManager.reloadGlobalVariables(generatedAssembly);
         if (f instanceof Function) {
             if (((Function) f).getReturnType() instanceof RealType) {
-                register = registerManager.getFreeFloatRegister(code);
-                code.addSentence("mov.d " + register.getName() + ", " + registerManager.getFloatResult().getName());
+                register = registerManager.getFreeFloatRegister(generatedAssembly);
+                generatedAssembly.addCodeLine("mov.d " + register.getName() + ", " + registerManager.getFloatResult().getName());
             } else {
-                register = registerManager.getFreeRegister(code);
-                code.addSentence("move " + register.getName() + ", " + registerManager.getIntResult().getName());
+                register = registerManager.getFreeRegister(generatedAssembly);
+                generatedAssembly.addCodeLine("move " + register.getName() + ", " + registerManager.getIntResult().getName());
             }
         }
     }

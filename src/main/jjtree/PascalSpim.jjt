@@ -52,16 +52,16 @@ public class PascalSpim {
         }
         SymbolTable st = SymbolTable.getInstance();
         st.init();
-        Code code = new Code();
-        code.init();
+        GeneratedAssembly generatedAssembly = new GeneratedAssembly();
+        generatedAssembly.init();
 
         Program n = ps.programStart();
         if (st.getError()) {
             System.out.println("Process finished with errors");
         } else {
             System.out.println("Process finished correctly.");
-            n.generateCode(code, new RegisterManager());
-            code.writeTo(Paths.get(file_out));
+            n.generateCode(generatedAssembly, new RegisterManager());
+            generatedAssembly.writeTo(Paths.get(file_out));
         }
     }
 

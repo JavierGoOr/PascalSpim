@@ -1,7 +1,7 @@
 package org.pascal2spim.statements.switchcase;
 
-import org.pascal2spim.Code;
 import org.pascal2spim.Expression;
+import org.pascal2spim.GeneratedAssembly;
 import org.pascal2spim.Register;
 import org.pascal2spim.RegisterManager;
 import org.pascal2spim.constants.BooleanConstant;
@@ -36,14 +36,14 @@ public class CaseStatement extends Statement {
             caseStats.add(new CaseSequence(caseConst, block));
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         Register[] state;
         CaseSequence cs;
         String value = null;
-        int n = code.getConsecutive();
+        int n = generatedAssembly.giveSequenceValue();
         int ordering;
-        caseExpr.generateCode(code, registerManager);
-        caseExpr.getRegister().checkAndLiberate(code);
+        caseExpr.generateCode(generatedAssembly, registerManager);
+        caseExpr.getRegister().checkAndLiberate(generatedAssembly);
         ordering = registerManager.giveCurrentNumber();
         state = registerManager.saveStateOfRegisters();
         for (int i = 0; i < caseStats.size(); i++) {
@@ -58,27 +58,27 @@ public class CaseStatement extends Statement {
             } else if (cs.getCaseConst() instanceof CharConstant) {
                 value = "'" + cs.getCaseConst().toString() + "'";
             }
-            code.addSentence("beq " + caseExpr.getRegister().getName() + ", " + value + ", case" + n + "_b" + i);
+            generatedAssembly.addCodeLine("beq " + caseExpr.getRegister().getName() + ", " + value + ", case" + n + "_b" + i);
         }
         if (elseBlock != null)
-            code.addSentence("b case" + n + "_else");
+            generatedAssembly.addCodeLine("b case" + n + "_else");
         else
-            code.addSentence("b case" + n + "_end");
+            generatedAssembly.addCodeLine("b case" + n + "_end");
         for (int i = 0; i < caseStats.size(); i++) {
-            code.addLabel("case" + n + "_b" + i);
+            generatedAssembly.addLabel("case" + n + "_b" + i);
             cs = (CaseSequence) caseStats.elementAt(i);
-            cs.getBlock().generateCode(code, registerManager);
-            registerManager.storeLoadedVars(ordering, code);
-            registerManager.recoverStateOfRegisters(state, code);
-            code.addSentence("b case" + n + "_end");
+            cs.getBlock().generateCode(generatedAssembly, registerManager);
+            registerManager.storeLoadedVars(ordering, generatedAssembly);
+            registerManager.recoverStateOfRegisters(state, generatedAssembly);
+            generatedAssembly.addCodeLine("b case" + n + "_end");
         }
         if (elseBlock != null) {
-            code.addLabel("case" + n + "_else");
-            elseBlock.generateCode(code, registerManager);
-            registerManager.storeLoadedVars(ordering, code);
-            registerManager.recoverStateOfRegisters(state, code);
+            generatedAssembly.addLabel("case" + n + "_else");
+            elseBlock.generateCode(generatedAssembly, registerManager);
+            registerManager.storeLoadedVars(ordering, generatedAssembly);
+            registerManager.recoverStateOfRegisters(state, generatedAssembly);
         }
-        code.addLabel("case" + n + "_end");
+        generatedAssembly.addLabel("case" + n + "_end");
     }
 
     public boolean isRepeated(Constant caseConst) {

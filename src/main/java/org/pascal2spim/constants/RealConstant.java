@@ -1,6 +1,6 @@
 package org.pascal2spim.constants;
 
-import org.pascal2spim.Code;
+import org.pascal2spim.GeneratedAssembly;
 import org.pascal2spim.PascalSpim;
 import org.pascal2spim.RegisterManager;
 import org.pascal2spim.types.RealType;
@@ -32,10 +32,10 @@ public class RealConstant extends Constant {
         return "" + value;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
-        register = registerManager.getFreeFloatRegister(code);
-        int n = code.getConsecutiveForConst();
-        code.addDataSentence("\treal_ct" + n + ":\t.double " + this.toString().toLowerCase());
-        code.addSentence("l.d " + register.getName() + ", real_ct" + n);
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
+        register = registerManager.getFreeFloatRegister(generatedAssembly);
+        int n = generatedAssembly.giveSequenceValueForConstants();
+        generatedAssembly.addDataDefinition("\treal_ct" + n + ":\t.double " + this.toString().toLowerCase());
+        generatedAssembly.addCodeLine("l.d " + register.getName() + ", real_ct" + n);
     }
 }

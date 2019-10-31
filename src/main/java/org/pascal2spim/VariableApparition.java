@@ -44,16 +44,16 @@ public class VariableApparition extends FactorObject {
         register = reg;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         register = registerManager.getRegisterOfVar(this);
         if (register == null) {
             if (this.getType() instanceof RealType) {
-                register = registerManager.getFreeFloatRegister(code);
+                register = registerManager.getFreeFloatRegister(generatedAssembly);
                 register.setVariable(this, registerManager);
                 if (((Variable) description.getObject()).getIsLocal())
-                    code.addSentence("l.d " + register.getName() + ", " + (((Variable) description.getObject()).getDisplacement() * -1) + "($fp)");
+                    generatedAssembly.addCodeLine("l.d " + register.getName() + ", " + (((Variable) description.getObject()).getDisplacement() * -1) + "($fp)");
                 else {
-                    code.addSentence("l.d " + register.getName() + ", _" + description.getName());
+                    generatedAssembly.addCodeLine("l.d " + register.getName() + ", _" + description.getName());
                 }
             } else /*if(this.getType() instanceof ArrayType)
 			{
@@ -63,14 +63,14 @@ public class VariableApparition extends FactorObject {
 				code.addSentence("la " + register.getName() + ", " + description.getName());
 			}
 			else*/ {
-                register = registerManager.getFreeRegister(code);
+                register = registerManager.getFreeRegister(generatedAssembly);
                 register.setVariable(this, registerManager);
                 if (((Variable) description.getObject()).getIsLocal())
-                    code.addSentence("lw " + register.getName() + ", " + (((Variable) description.getObject()).getDisplacement() * -1) + "($fp)");
+                    generatedAssembly.addCodeLine("lw " + register.getName() + ", " + (((Variable) description.getObject()).getDisplacement() * -1) + "($fp)");
                 else if (this.getType() instanceof ArrayType) {
-                    code.addSentence("la " + register.getName() + ", _" + description.getName());
+                    generatedAssembly.addCodeLine("la " + register.getName() + ", _" + description.getName());
                 } else {
-                    code.addSentence("lw " + register.getName() + ", _" + description.getName());
+                    generatedAssembly.addCodeLine("lw " + register.getName() + ", _" + description.getName());
                 }
             }
         }

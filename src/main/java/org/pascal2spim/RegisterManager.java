@@ -40,7 +40,7 @@ public class RegisterManager {
         return n;
     }
 
-    public Register getFreeRegister(Code code) {
+    public Register getFreeRegister(GeneratedAssembly generatedAssembly) {
         boolean found = false;
         Register result = null;
         int i = 0;
@@ -58,7 +58,7 @@ public class RegisterManager {
                 if ((registers[i].getVariable() != null) && (!registers[i].getNotStore())) {
                     found = true;
                     result = registers[i];
-                    registers[i].liberate(code);
+                    registers[i].liberate(generatedAssembly);
                     registers[i].reserve();
                 } else
                     i++;
@@ -67,7 +67,7 @@ public class RegisterManager {
         return result;
     }
 
-    public Register getFreeFloatRegister(Code code) {
+    public Register getFreeFloatRegister(GeneratedAssembly generatedAssembly) {
         boolean found = false;
         Register result = null;
         int i = 0;
@@ -86,7 +86,7 @@ public class RegisterManager {
                 if ((fregisters[i].getVariable() != null) && (!fregisters[i].getNotStore())) {
                     found = true;
                     result = fregisters[i];
-                    fregisters[i].liberate(code);
+                    fregisters[i].liberate(generatedAssembly);
                     fregisters[i].reserve();
                 } else
                     i++;
@@ -125,16 +125,16 @@ public class RegisterManager {
         return result;
     }
 
-    public void storeLoadedVars(int startNumber, Code code) {
+    public void storeLoadedVars(int startNumber, GeneratedAssembly generatedAssembly) {
         for (int i = 0; i < registers.length; i++) {
             if (registers[i].getVariable() != null)
                 if (registers[i].getOrdering() >= startNumber)
-                    registers[i].liberate(code);
+                    registers[i].liberate(generatedAssembly);
         }
         for (int i = 0; i < fregisters.length; i++) {
             if (fregisters[i].getVariable() != null)
                 if (fregisters[i].getOrdering() >= startNumber)
-                    fregisters[i].liberate(code);
+                    fregisters[i].liberate(generatedAssembly);
         }
         n = startNumber;
     }
@@ -150,7 +150,7 @@ public class RegisterManager {
         return result;
     }
 
-    public void recoverStateOfRegisters(Register[] state, Code code) {
+    public void recoverStateOfRegisters(Register[] state, GeneratedAssembly generatedAssembly) {
         Register rg;
         Variable aux = null;
         for (int i = 0; i < registers.length; i++) {
@@ -158,15 +158,15 @@ public class RegisterManager {
                 if ((registers[i].getVariable() == null) || (!registers[i].getVariable().isEqualTo(state[i].getVariable()))) {
                     rg = getRegisterOfVar(state[i].getVariable());
                     if (rg != null)
-                        rg.liberate(code);
-                    registers[i].liberate(code);
+                        rg.liberate(generatedAssembly);
+                    registers[i].liberate(generatedAssembly);
                     registers[i].reserve();
                     registers[i].setVariable(state[i].getVariable(), state[i].getOrdering());
                     aux = (Variable) state[i].getVariable().getDescription().getObject();
                     if (aux.getIsLocal())
-                        code.addSentence("lw " + registers[i].getName() + ", " + (aux.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("lw " + registers[i].getName() + ", " + (aux.getDisplacement() * -1) + "($fp)");
                     else {
-                        code.addSentence("lw " + registers[i].getName() + ", _" + registers[i].getVariable().getDescription().getName());
+                        generatedAssembly.addCodeLine("lw " + registers[i].getName() + ", _" + registers[i].getVariable().getDescription().getName());
                     }
                 }
             }
@@ -176,89 +176,89 @@ public class RegisterManager {
                 if ((fregisters[i].getVariable() == null) || (!fregisters[i].getVariable().isEqualTo(state[registers.length + i].getVariable()))) {
                     rg = getRegisterOfVar(state[registers.length + i].getVariable());
                     if (rg != null)
-                        rg.liberate(code);
-                    fregisters[i].liberate(code);
+                        rg.liberate(generatedAssembly);
+                    fregisters[i].liberate(generatedAssembly);
                     fregisters[i].reserve();
                     fregisters[i].setVariable(state[registers.length + i].getVariable(), state[registers.length + i].getOrdering());
                     aux = (Variable) state[registers.length + i].getVariable().getDescription().getObject();
                     if (aux.getIsLocal())
-                        code.addSentence("l.d " + fregisters[i].getName() + ", " + (aux.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("l.d " + fregisters[i].getName() + ", " + (aux.getDisplacement() * -1) + "($fp)");
                     else {
-                        code.addSentence("l.d " + fregisters[i].getName() + ", _" + fregisters[i].getVariable().getDescription().getName());
+                        generatedAssembly.addCodeLine("l.d " + fregisters[i].getName() + ", _" + fregisters[i].getVariable().getDescription().getName());
                     }
                 }
             }
         }
     }
 
-    public void saveVariables(Code code) {
+    public void saveVariables(GeneratedAssembly generatedAssembly) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].liberate(code);
+            registers[i].liberate(generatedAssembly);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].liberate(code);
+            fregisters[i].liberate(generatedAssembly);
         }
     }
 
-    public void saveRegisters(Code code) {
+    public void saveRegisters(GeneratedAssembly generatedAssembly) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].save(code);
+            registers[i].save(generatedAssembly);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].save(code);
+            fregisters[i].save(generatedAssembly);
         }
     }
 
-    public void saveGlobalVariables(Code code) {
+    public void saveGlobalVariables(GeneratedAssembly generatedAssembly) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].liberateIfGlobalVariable(code);
+            registers[i].liberateIfGlobalVariable(generatedAssembly);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].liberateIfGlobalVariable(code);
+            fregisters[i].liberateIfGlobalVariable(generatedAssembly);
         }
     }
 
-    public void reloadGlobalVariables(Code code) {
+    public void reloadGlobalVariables(GeneratedAssembly generatedAssembly) {
         for (int i = 0; i < registers.length; i++) {
-            registers[i].reloadIfGlobalVariable(code);
+            registers[i].reloadIfGlobalVariable(generatedAssembly);
         }
         for (int i = 0; i < fregisters.length; i++) {
-            fregisters[i].reloadIfGlobalVariable(code);
+            fregisters[i].reloadIfGlobalVariable(generatedAssembly);
         }
     }
 
-    public Register[] storeInStack(Code code) {
+    public Register[] storeInStack(GeneratedAssembly generatedAssembly) {
         Register[] result = saveStateOfRegisters();
         for (int i = 0; i < registers.length; i++) {
             if (!registers[i].getFree()) {
-                code.addSentence("subu $sp, $sp, 4");
-                code.addSentence("sw " + registers[i].getName() + ", ($sp)");
+                generatedAssembly.addCodeLine("subu $sp, $sp, 4");
+                generatedAssembly.addCodeLine("sw " + registers[i].getName() + ", ($sp)");
                 registers[i].changeState(null, null, -1, true, false);
             }
         }
         for (int i = 0; i < fregisters.length; i++) {
             if (!fregisters[i].getFree()) {
-                code.addSentence("subu $sp, $sp, 8");
-                code.addSentence("s.d " + fregisters[i].getName() + ", ($sp)");
+                generatedAssembly.addCodeLine("subu $sp, $sp, 8");
+                generatedAssembly.addCodeLine("s.d " + fregisters[i].getName() + ", ($sp)");
                 fregisters[i].changeState(null, null, -1, true, false);
             }
         }
         return result;
     }
 
-    public void recoverFromStack(Register[] state, Code code) {
+    public void recoverFromStack(Register[] state, GeneratedAssembly generatedAssembly) {
         for (int i = (fregisters.length - 1); i >= 0; i--) {
             if (!state[registers.length + i].getFree()) {
-                code.addSentence("l.d " + fregisters[i].getName() + ", ($sp)");
-                code.addSentence("addu $sp, $sp, 8");
+                generatedAssembly.addCodeLine("l.d " + fregisters[i].getName() + ", ($sp)");
+                generatedAssembly.addCodeLine("addu $sp, $sp, 8");
                 fregisters[i].changeState(state[registers.length + i].getVariable(), state[registers.length + i].getIndex(),
                         state[registers.length + i].getOrdering(), state[registers.length + i].getFree(), state[registers.length + i].getNotStore());
             }
         }
         for (int i = (registers.length - 1); i >= 0; i--) {
             if (!state[i].getFree()) {
-                code.addSentence("lw " + registers[i].getName() + ", ($sp)");
-                code.addSentence("addu $sp, $sp, 4");
+                generatedAssembly.addCodeLine("lw " + registers[i].getName() + ", ($sp)");
+                generatedAssembly.addCodeLine("addu $sp, $sp, 4");
                 registers[i].changeState(state[i].getVariable(), state[i].getIndex(), state[i].getOrdering(), state[i].getFree(), state[i].getNotStore());
             }
         }

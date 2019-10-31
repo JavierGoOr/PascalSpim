@@ -1,6 +1,6 @@
 package org.pascal2spim.constants;
 
-import org.pascal2spim.Code;
+import org.pascal2spim.GeneratedAssembly;
 import org.pascal2spim.PascalSpim;
 import org.pascal2spim.RegisterManager;
 import org.pascal2spim.types.IntegerType;
@@ -32,8 +32,8 @@ public class IntegerConstant extends Constant {
         return "" + value;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
-        register = registerManager.getFreeRegister(code);
-        code.addSentence("li " + register.getName() + ", " + value + "");
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
+        register = registerManager.getFreeRegister(generatedAssembly);
+        generatedAssembly.addCodeLine("li " + register.getName() + ", " + value + "");
     }
 }

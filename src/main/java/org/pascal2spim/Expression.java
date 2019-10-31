@@ -48,67 +48,67 @@ public class Expression extends FactorObject {
         return typeAux;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         boolean fpoint = false;
         String assemblyOp;
         Operator op;
         Register r1 = null, r2 = null;
         SimpleExpression se2;
-        firstExpr.generateCode(code, registerManager);
+        firstExpr.generateCode(generatedAssembly, registerManager);
         register = firstExpr.getRegister();
         for (int i = 0; i < otherExprs.size(); i += 2) {
             fpoint = false;
             op = (Operator) otherExprs.elementAt(i);
             se2 = (SimpleExpression) otherExprs.elementAt(i + 1);
             register.setNotStore(true);
-            se2.generateCode(code, registerManager);
+            se2.generateCode(generatedAssembly, registerManager);
             register.setNotStore(false);
             if (register.isFPoint() || se2.getRegister().isFPoint()) {
                 fpoint = true;
                 if (!register.isFPoint()) {
-                    r1 = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + register.getName() + ", " + r1.getName());
-                    code.addSentence("cvt.d.w " + r1.getName() + ", " + r1.getName());
+                    r1 = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + register.getName() + ", " + r1.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + r1.getName() + ", " + r1.getName());
                     r2 = se2.getRegister();
                 } else if (!se2.getRegister().isFPoint()) {
-                    r2 = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + se2.getRegister().getName() + ", " + r2.getName());
-                    code.addSentence("cvt.d.w " + r2.getName() + ", " + r2.getName());
+                    r2 = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + se2.getRegister().getName() + ", " + r2.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + r2.getName() + ", " + r2.getName());
                     r1 = register;
                 } else {
                     r1 = register;
                     r2 = se2.getRegister();
                 }
-                r1.checkAndLiberate(code);
-                r2.checkAndLiberate(code);
+                r1.checkAndLiberate(generatedAssembly);
+                r2.checkAndLiberate(generatedAssembly);
             } else {
                 r1 = register;
                 r2 = se2.getRegister();
             }
-            register.checkAndLiberate(code);
-            se2.getRegister().checkAndLiberate(code);
+            register.checkAndLiberate(generatedAssembly);
+            se2.getRegister().checkAndLiberate(generatedAssembly);
             assemblyOp = op.getAssemblyOp(fpoint);
-            register = registerManager.getFreeRegister(code);
+            register = registerManager.getFreeRegister(generatedAssembly);
             if (fpoint) {
-                code.addSentence(assemblyOp + " " + r1.getName() + ", " + r2.getName());
+                generatedAssembly.addCodeLine(assemblyOp + " " + r1.getName() + ", " + r2.getName());
                 boolean inverse = false;
-                int n = code.getConsecutive();
+                int n = generatedAssembly.giveSequenceValue();
                 if ((op.getKind().compareTo(">") == 0) ||
                         (op.getKind().compareTo(">=") == 0) ||
                         (op.getKind().compareTo("<>") == 0)) {
                     inverse = true;
                 }
                 if (inverse)
-                    code.addSentence("bc1t flt_else" + n);
+                    generatedAssembly.addCodeLine("bc1t flt_else" + n);
                 else
-                    code.addSentence("bc1f flt_else" + n);
-                code.addSentence("li " + register.getName() + ", 1");
-                code.addSentence("b flt_end" + n);
-                code.addLabel("flt_else" + n);
-                code.addSentence("li " + register.getName() + ", 0");
-                code.addLabel("flt_end" + n);
+                    generatedAssembly.addCodeLine("bc1f flt_else" + n);
+                generatedAssembly.addCodeLine("li " + register.getName() + ", 1");
+                generatedAssembly.addCodeLine("b flt_end" + n);
+                generatedAssembly.addLabel("flt_else" + n);
+                generatedAssembly.addCodeLine("li " + register.getName() + ", 0");
+                generatedAssembly.addLabel("flt_end" + n);
             } else
-                code.addSentence(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
+                generatedAssembly.addCodeLine(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
         }
     }
 }

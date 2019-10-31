@@ -1,6 +1,6 @@
 package org.pascal2spim.statements;
 
-import org.pascal2spim.Code;
+import org.pascal2spim.GeneratedAssembly;
 import org.pascal2spim.RegisterManager;
 
 public abstract class Statement {
@@ -23,7 +23,7 @@ public abstract class Statement {
         column = c;
     }
 
-    abstract public void generateCode(Code code, RegisterManager registerManager);
+    abstract public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager);
 
     public Statement hasReturnStatement() {
         return null;

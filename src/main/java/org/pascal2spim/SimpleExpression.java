@@ -57,28 +57,28 @@ public class SimpleExpression {
         return typeAux;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         String assemblyOp;
         Operator op;
         Register r1 = null, r2 = null;
         boolean fpoint = false;
         Term t2;
-        firstTerm.generateCode(code, registerManager);
+        firstTerm.generateCode(generatedAssembly, registerManager);
         register = firstTerm.getRegister();
         if (firstOperator != null) {
             if (firstOperator.getKind().compareTo("-") == 0) {
                 if (register.isFPoint()) {
                     register.setNotStore(true);
-                    Register raux_int = registerManager.getFreeRegister(code);
-                    Register raux_float = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("li " + raux_int.getName() + ", -1");
-                    code.addSentence("mtc1 " + raux_int.getName() + ", " + raux_float.getName());
-                    code.addSentence("cvt.d.w " + raux_float.getName() + ", " + raux_float.getName());
-                    code.addSentence("mul.d " + register.getName() + ", " + register.getName() + ", " + raux_float.getName());
-                    raux_int.checkAndLiberate(code);
-                    raux_float.checkAndLiberate(code);
+                    Register raux_int = registerManager.getFreeRegister(generatedAssembly);
+                    Register raux_float = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("li " + raux_int.getName() + ", -1");
+                    generatedAssembly.addCodeLine("mtc1 " + raux_int.getName() + ", " + raux_float.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + raux_float.getName() + ", " + raux_float.getName());
+                    generatedAssembly.addCodeLine("mul.d " + register.getName() + ", " + register.getName() + ", " + raux_float.getName());
+                    raux_int.checkAndLiberate(generatedAssembly);
+                    raux_float.checkAndLiberate(generatedAssembly);
                 } else
-                    code.addSentence("mul " + register.getName() + ", " + register.getName() + ", -1");
+                    generatedAssembly.addCodeLine("mul " + register.getName() + ", " + register.getName() + ", -1");
             }
         }
         for (int i = 0; i < otherTerms.size(); i += 2) {
@@ -86,33 +86,33 @@ public class SimpleExpression {
             op = (Operator) otherTerms.elementAt(i);
             t2 = (Term) otherTerms.elementAt(i + 1);
             register.setNotStore(true);
-            t2.generateCode(code, registerManager);
+            t2.generateCode(generatedAssembly, registerManager);
             r1 = register;
             r2 = t2.getRegister();
             register.setNotStore(false);
             if (register.isFPoint() || t2.getRegister().isFPoint()) {
                 fpoint = true;
                 if (!register.isFPoint()) {
-                    r1 = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + register.getName() + ", " + r1.getName());
-                    code.addSentence("cvt.d.w " + r1.getName() + ", " + r1.getName());
+                    r1 = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + register.getName() + ", " + r1.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + r1.getName() + ", " + r1.getName());
                 }
                 if (!t2.getRegister().isFPoint()) {
-                    r2 = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + t2.getRegister().getName() + ", " + r2.getName());
-                    code.addSentence("cvt.d.w " + r2.getName() + ", " + r2.getName());
+                    r2 = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + t2.getRegister().getName() + ", " + r2.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + r2.getName() + ", " + r2.getName());
                 }
-                r1.checkAndLiberate(code);
-                r2.checkAndLiberate(code);
+                r1.checkAndLiberate(generatedAssembly);
+                r2.checkAndLiberate(generatedAssembly);
             }
-            register.checkAndLiberate(code);
-            t2.getRegister().checkAndLiberate(code);
+            register.checkAndLiberate(generatedAssembly);
+            t2.getRegister().checkAndLiberate(generatedAssembly);
             assemblyOp = op.getAssemblyOp(fpoint);
             if (fpoint)
-                register = registerManager.getFreeFloatRegister(code);
+                register = registerManager.getFreeFloatRegister(generatedAssembly);
             else
-                register = registerManager.getFreeRegister(code);
-            code.addSentence(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
+                register = registerManager.getFreeRegister(generatedAssembly);
+            generatedAssembly.addCodeLine(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
         }
     }
 }

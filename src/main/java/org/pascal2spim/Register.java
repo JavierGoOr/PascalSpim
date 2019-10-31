@@ -69,32 +69,32 @@ public class Register {
         return free;
     }
 
-    public void checkAndLiberate(Code code) {
+    public void checkAndLiberate(GeneratedAssembly generatedAssembly) {
         if (variable == null || index != null) {
             if (index != null)
-                index.liberate(code);
-            this.liberate(code);
+                index.liberate(generatedAssembly);
+            this.liberate(generatedAssembly);
         }
     }
 
-    public void liberate(Code code) {
+    public void liberate(GeneratedAssembly generatedAssembly) {
         this.free = true;
         if (variable != null) {
             Variable vaux = (Variable) variable.getDescription().getObject();
             if (fpoint) {
                 if (index == null) {
                     if (vaux.getIsLocal())
-                        code.addSentence("s.d " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("s.d " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
                     else {
-                        code.addSentence("s.d " + name + ", _" + variable.getDescription().getName());
+                        generatedAssembly.addCodeLine("s.d " + name + ", _" + variable.getDescription().getName());
                     }
                 }
             } else {
                 if (index == null) {
                     if (vaux.getIsLocal())
-                        code.addSentence("sw " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("sw " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
                     else {
-                        code.addSentence("sw " + name + ", _" + variable.getDescription().getName());
+                        generatedAssembly.addCodeLine("sw " + name + ", _" + variable.getDescription().getName());
                     }
                 }
             }
@@ -103,41 +103,41 @@ public class Register {
             ordering = -1;
         }
         if (index != null)
-            index.checkAndLiberate(code);
+            index.checkAndLiberate(generatedAssembly);
     }
 
-    public void save(Code code) {
+    public void save(GeneratedAssembly generatedAssembly) {
         if (variable != null) {
             Variable vaux = (Variable) variable.getDescription().getObject();
             if (fpoint) {
                 if (index == null) {
                     if (vaux.getIsLocal())
-                        code.addSentence("s.d " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("s.d " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
                     else {
-                        code.addSentence("s.d " + name + ", _" + variable.getDescription().getName());
+                        generatedAssembly.addCodeLine("s.d " + name + ", _" + variable.getDescription().getName());
                     }
                 }
             } else {
                 if (index == null) {
                     if (vaux.getIsLocal())
-                        code.addSentence("sw " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
+                        generatedAssembly.addCodeLine("sw " + name + ", " + (vaux.getDisplacement() * -1) + "($fp)");
                     else {
-                        code.addSentence("sw " + name + ", _" + variable.getDescription().getName());
+                        generatedAssembly.addCodeLine("sw " + name + ", _" + variable.getDescription().getName());
                     }
                 }
             }
         }
     }
 
-    public void liberateIfGlobalVariable(Code code) {
+    public void liberateIfGlobalVariable(GeneratedAssembly generatedAssembly) {
         if (variable != null && (variable.getDescription().getScope().compareTo("1") == 0)) {
             if (fpoint) {
                 if (index == null) {
-                    code.addSentence("s.d " + name + ", _" + variable.getDescription().getName());
+                    generatedAssembly.addCodeLine("s.d " + name + ", _" + variable.getDescription().getName());
                 }
             } else {
                 if (index == null) {
-                    code.addSentence("sw " + name + ", _" + variable.getDescription().getName());
+                    generatedAssembly.addCodeLine("sw " + name + ", _" + variable.getDescription().getName());
                 }
             }
             //free = true;
@@ -147,16 +147,16 @@ public class Register {
         }
     }
 
-    public void reloadIfGlobalVariable(Code code) {
+    public void reloadIfGlobalVariable(GeneratedAssembly generatedAssembly) {
         if (variable != null && (variable.getDescription().getScope().compareTo("1") == 0)) {
             Variable vaux = (Variable) variable.getDescription().getObject();
             if (fpoint) {
                 if (index == null) {
-                    code.addSentence("l.d " + name + ", _" + variable.getDescription().getName());
+                    generatedAssembly.addCodeLine("l.d " + name + ", _" + variable.getDescription().getName());
                 }
             } else {
                 if (index == null) {
-                    code.addSentence("lw " + name + ", _" + variable.getDescription().getName());
+                    generatedAssembly.addCodeLine("lw " + name + ", _" + variable.getDescription().getName());
                 }
             }
         }

@@ -25,9 +25,9 @@ public class Program {
         this.block = block;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         SymbolTable st = SymbolTable.getInstance();
-        st.generateCode(code);
-        block.generateCode(code, registerManager);
+        st.generateCode(generatedAssembly);
+        block.generateCode(generatedAssembly, registerManager);
     }
 }

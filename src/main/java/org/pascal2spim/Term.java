@@ -48,46 +48,46 @@ public class Term {
         return typeAux;
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         String assemblyOp;
         boolean fpoint = false;
         Operator op;
         Factor f2;
         Register r1 = null, r2 = null;
-        firstFactor.generateCode(code, registerManager);
+        firstFactor.generateCode(generatedAssembly, registerManager);
         register = firstFactor.getRegister();
         for (int i = 0; i < otherFactors.size(); i += 2) {
             register.setNotStore(true);
             fpoint = false;
             op = (Operator) otherFactors.elementAt(i);
             f2 = (Factor) otherFactors.elementAt(i + 1);
-            f2.generateCode(code, registerManager);
+            f2.generateCode(generatedAssembly, registerManager);
             register.setNotStore(false);
             r1 = register;
             r2 = f2.getRegister();
             if (register.isFPoint() || f2.getRegister().isFPoint() || (op.getKind().compareTo("/") == 0)) {
                 fpoint = true;
                 if (!register.isFPoint()) {
-                    r1 = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + register.getName() + ", " + r1.getName());
-                    code.addSentence("cvt.d.w " + r1.getName() + ", " + r1.getName());
+                    r1 = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + register.getName() + ", " + r1.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + r1.getName() + ", " + r1.getName());
                 }
                 if (!f2.getRegister().isFPoint()) {
-                    r2 = registerManager.getFreeFloatRegister(code);
-                    code.addSentence("mtc1 " + f2.getRegister().getName() + ", " + r2.getName());
-                    code.addSentence("cvt.d.w " + r2.getName() + ", " + r2.getName());
+                    r2 = registerManager.getFreeFloatRegister(generatedAssembly);
+                    generatedAssembly.addCodeLine("mtc1 " + f2.getRegister().getName() + ", " + r2.getName());
+                    generatedAssembly.addCodeLine("cvt.d.w " + r2.getName() + ", " + r2.getName());
                 }
-                r1.checkAndLiberate(code);
-                r2.checkAndLiberate(code);
+                r1.checkAndLiberate(generatedAssembly);
+                r2.checkAndLiberate(generatedAssembly);
             }
-            register.checkAndLiberate(code);
-            f2.getRegister().checkAndLiberate(code);
+            register.checkAndLiberate(generatedAssembly);
+            f2.getRegister().checkAndLiberate(generatedAssembly);
             assemblyOp = op.getAssemblyOp(fpoint);
             if (fpoint)
-                register = registerManager.getFreeFloatRegister(code);
+                register = registerManager.getFreeFloatRegister(generatedAssembly);
             else
-                register = registerManager.getFreeRegister(code);
-            code.addSentence(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
+                register = registerManager.getFreeRegister(generatedAssembly);
+            generatedAssembly.addCodeLine(assemblyOp + " " + register.getName() + ", " + r1.getName() + ", " + r2.getName());
         }
     }
 }

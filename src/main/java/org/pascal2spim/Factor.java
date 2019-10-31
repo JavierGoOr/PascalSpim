@@ -34,12 +34,12 @@ public class Factor {
         return factor.getRegister();
     }
 
-    public void generateCode(Code code, RegisterManager registerManager) {
+    public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
         String assemblyOp = "";
-        factor.generateCode(code, registerManager);
+        factor.generateCode(generatedAssembly, registerManager);
         if (prevOperator != null) {
             assemblyOp = prevOperator.getAssemblyOp(false);
-            code.addSentence(assemblyOp + " " + factor.getRegister().getName() + ", " + factor.getRegister().getName() + ", 0x00000001");
+            generatedAssembly.addCodeLine(assemblyOp + " " + factor.getRegister().getName() + ", " + factor.getRegister().getName() + ", 0x00000001");
         }
     }
 }
