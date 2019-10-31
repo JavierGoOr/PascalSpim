@@ -8,13 +8,18 @@
 PARSER_BEGIN(PascalSpim)
 package org.pascal2spim;
 
-import java.io.*;
-import java.util.Vector;
 import org.pascal2spim.constants.*;
 import org.pascal2spim.operators.*;
 import org.pascal2spim.statements.*;
-import org.pascal2spim.statements.switchcase.*;
+import org.pascal2spim.statements.switchcase.CaseStatement;
 import org.pascal2spim.types.*;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Paths;
+import java.util.Vector;
 
 public class PascalSpim {
     private static PascalSpim ps;
@@ -56,10 +61,7 @@ public class PascalSpim {
         } else {
             System.out.println("Process finished correctly.");
             n.generateCode(code, new RegisterManager());
-            boolean done = code.writeCode(file_out);
-            if (!done) {
-                System.out.println("Error: file \"" + file_out + "\" could not be written.");
-            }
+            code.writeTo(Paths.get(file_out));
         }
     }
 

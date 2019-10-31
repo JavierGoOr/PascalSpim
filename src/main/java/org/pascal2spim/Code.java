@@ -1,19 +1,28 @@
 package org.pascal2spim;
 
-import java.util.Vector;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Code {
-    private int n = 0;
-    private int constN = 0;
-    private Vector dataSegm = new Vector();
-    private Vector sentences = new Vector();
-    private String label = null;
+    private int n;
+    private int constN;
+    private List<String> dataSegm;
+    private List<String> sentences;
+    private String label;
+
+    public Code() {
+        init();
+    }
 
     public void init() {
         n = 0;
         constN = 0;
-        dataSegm = new Vector();
-        sentences = new Vector();
+        dataSegm = new ArrayList<>();
+        sentences = new ArrayList<>();
         label = null;
     }
 
@@ -48,29 +57,25 @@ public class Code {
         label = lab;
     }
 
-    public boolean writeCode(String path) {
-        FicheroEscritura fw = new FicheroEscritura(path);
-        boolean opened = fw.abrir();
-        if (opened) {
-            int i = 0;
-            String result = "";
-            if (dataSegm.size() > 0) {
-                fw.escribirLinea(".data");
-                while (i < dataSegm.size()) {
-                    fw.escribirLinea(dataSegm.elementAt(i).toString());
-                    i++;
-                }
-            }
-            fw.escribirLinea(".text");
-            fw.escribirLinea("\t.globl _main_");
-            fw.escribir("_main_: ");
-            i = 0;
-            while (i < sentences.size()) {
-                fw.escribirLinea(sentences.elementAt(i).toString());
-                i++;
-            }
-            fw.cerrar();
+    public void writeTo(Path path) {
+        try (PrintWriter printWriter = new PrintWriter(Files.newBufferedWriter(path))) {
+            writeTo(printWriter);
+        } catch (IOException e) {
+            System.err.println("Error: file \"" + path.toString() + "\" could not be written.");
         }
-        return opened;
     }
+
+    private void writeTo(PrintWriter writer) {
+        if (!dataSegm.isEmpty()) {
+            writer.println(".data");
+            dataSegm.forEach(writer::println);
+        }
+
+        writer.println(".text");
+        writer.println("\t.globl _main_");
+        writer.print("_main_: ");
+
+        sentences.forEach(writer::println);
+    }
+
 }
