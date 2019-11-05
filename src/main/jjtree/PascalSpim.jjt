@@ -8,11 +8,20 @@
 PARSER_BEGIN(PascalSpim)
 package org.pascal2spim;
 
-import org.pascal2spim.constants.*;
-import org.pascal2spim.operators.*;
-import org.pascal2spim.statements.*;
-import org.pascal2spim.statements.switchcase.CaseStatement;
-import org.pascal2spim.types.*;
+import org.pascal2spim.language.constants.*;
+import org.pascal2spim.language.expressions.*;
+import org.pascal2spim.language.functions.*;
+import org.pascal2spim.language.operators.*;
+import org.pascal2spim.language.statements.*;
+import org.pascal2spim.language.statements.switchcase.CaseStatement;
+import org.pascal2spim.language.types.*;
+import org.pascal2spim.language.variables.IndexedVariable;
+import org.pascal2spim.language.variables.Variable;
+import org.pascal2spim.language.variables.VariableApparition;
+import org.pascal2spim.mips32.GeneratedAssembly;
+import org.pascal2spim.mips32.RegisterManager;
+import org.pascal2spim.symboltable.SymbolTable;
+import org.pascal2spim.symboltable.SymbolTableEntry;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -337,7 +346,7 @@ Block block(String scope) :
 	st.addSymbol(ste);
 	faux.addParameter(ste);
 	
-	faux = new Procedure();
+	faux = new org.pascal2spim.language.functions.Procedure();
 	faux.setScope("1-2");
 	faux.setBlock(b);
 	faux.setSpecialFunc("writereal");
@@ -399,7 +408,7 @@ Block block(String scope) :
 	ste = new SymbolTableEntry("writebooleanln", "1", faux);
 	st.addSymbol(ste);
 	b.addFunctOrProc(ste);
-	ste = new SymbolTableEntry("a", "1-7", new Variable(new BooleanType(), true, false, true));
+	ste = new org.pascal2spim.symboltable.SymbolTableEntry("a", "1-7", new Variable(new BooleanType(), true, false, true));
 	st.addSymbol(ste);
 	faux.addParameter(ste);
 }
@@ -1233,7 +1242,7 @@ Type typeConst(String scope) :
 	if(tp2 == null)
 		error = true;
 	if(!error)
-		((org.pascal2spim.types.ArrayType) tp).setElsType(tp2);
+		((org.pascal2spim.language.types.ArrayType) tp).setElsType(tp2);
 }
 	)
 	{
@@ -1283,7 +1292,7 @@ void subParList(FunctOrProc funcNode, String scope, String fscope, IntWrapper er
 {
 	Token t;
 	boolean isOutput = false;
-	Variable var;
+	org.pascal2spim.language.variables.Variable var;
 	Vector v = new Vector();
 	Type tp;
 	SymbolTable st = SymbolTable.getInstance();
@@ -1349,7 +1358,7 @@ Expression expression(String scope) :
 {
 	boolean error = false;
 	Token t;
-	SimpleExpression se, prevse;
+	org.pascal2spim.language.expressions.SimpleExpression se, prevse;
 	Expression e;
 	Operator op;
 	Type prevType = null;
@@ -1946,7 +1955,7 @@ Statement statement(String scope, String fname) :
 	FunctionCall fc = null;
 	Statement s = null, aux = null;
 	VariableApparition v = null;
-	Expression e = null;
+	org.pascal2spim.language.expressions.Expression e = null;
 	SymbolTable st = SymbolTable.getInstance();
 	SymbolTableEntry ste = null;
 	int i = 0, dims = 0;
