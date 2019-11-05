@@ -1,4 +1,4 @@
-ParseException: Encountered " ":" ": "" at line 3, column 12.
+ParseException: Encountered " ":" ": "" at line 3, column 5.
 Was expecting:
     "=" ...
     
@@ -6,24 +6,24 @@ Error at line 14, column 14 : identifier "a1" does not represent a type
 
 Error at line 16, column 1 : function "f1" has no return statement
 
-Error at line 28, column 15 : "p1" is a procedure : procedures cannot be called here
+Error at line 28, column 8 : "p1" is a procedure : procedures cannot be called here
 
-Error at line 29, column 15 : identifier "t1" does not represent either a function or a variable
+Error at line 29, column 8 : identifier "t1" does not represent either a function or a variable
 
-Error at line 30, column 15 : p1(integer, integer, integer, boolean) cannot be applied to p1()
+Error at line 30, column 8 : p1(integer, integer, integer, boolean) cannot be applied to p1()
 
-Error at line 31, column 9 : this is not a callable object
+Error at line 31, column 2 : this is not a callable object
 
-Error at line 32, column 9 : identifier "p1" does not represent a variable
+Error at line 32, column 2 : identifier "p1" does not represent a variable
 
-Error at line 33, column 11 : this variable cannot be indexed
+Error at line 33, column 4 : this variable cannot be indexed
 
-Error at line 34, column 9 : "factorial" is a function, but its return value it is not used
+Error at line 34, column 2 : "factorial" is a function, but its return value it is not used
 
-Error at line 35, column 11 : not enough indexes for this bracket
+Error at line 35, column 4 : not enough indexes for this bracket
 
-Error at line 36, column 16 : too many indexes for this bracket
+Error at line 36, column 9 : too many indexes for this bracket
 
-Error at line 37, column 19 : this variable cannot be indexed
+Error at line 37, column 12 : this variable cannot be indexed
 
 Process finished with errors
