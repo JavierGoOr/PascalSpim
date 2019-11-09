@@ -5,7 +5,7 @@ import junitparams.Parameters;
 import mars.MarsLaunch;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.pascal2spim.PascalSpim;
+import org.pascal2spim.MainApplication;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -116,7 +116,7 @@ public class AcceptanceTest {
     }
 
     private void compile(File pascalFile, File outputAssemblyFile) throws Exception {
-        PascalSpim.launch(new String[]{pascalFile.getAbsolutePath(), outputAssemblyFile.getAbsolutePath()});
+        MainApplication.launch(new String[]{pascalFile.getAbsolutePath(), outputAssemblyFile.getAbsolutePath()});
     }
 
     private String executeAssembly(File outputAssemblyFile) {

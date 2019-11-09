@@ -31,78 +31,13 @@ import java.nio.file.Paths;
 import java.util.Vector;
 
 public class PascalSpim {
-    private static PascalSpim ps;
-
-    public static void main(String args[]) throws Exception {
-        launch(args);
-    }
-
-    public static void launch(String args[]) throws Exception {
-        String file_in = "", file_out = "";
-        if (args.length != 2) {
-            System.out.println("Error: incorrect number of parameters.");
-            System.out.println("The way to execute this program is:");
-            System.out.println("\"java PascalSpim <file_in> <file_out>\"");
-            return;
-        } else {
-            file_in = args[0];
-            file_out = args[1];
-        }
-        try {
-            Reader in = new BufferedReader(new FileReader(file_in));
-            if (ps == null) {
-                ps = new PascalSpim(in);
-            } else {
-                ps.ReInit(in);
-            }
-        } catch (IOException e) {
-            System.out.println("Error: file \"" + file_in + "\" cannot be read. Please check whether it exists.");
-            return;
-        }
-        SymbolTable st = SymbolTable.getInstance();
-        st.init();
-        GeneratedAssembly generatedAssembly = new GeneratedAssembly();
-        generatedAssembly.init();
-
-        Program n = ps.programStart();
-        if (st.getError()) {
-            System.out.println("Process finished with errors");
-        } else {
-            System.out.println("Process finished correctly.");
-            n.generateCode(generatedAssembly, new RegisterManager());
-            generatedAssembly.writeTo(Paths.get(file_out));
-        }
-    }
-
-    public static void error_skipto(int kind, ParseException e) {
-        System.out.println(e.toString());
-        Token t;
-        do {
-            t = getNextToken();
-        } while (t.kind != kind);
-    }
-
-    public static void error_skipto_before(int kind, ParseException e) {
-        System.out.println(e.toString());
-        while (getToken(1).kind != kind) {
-            getNextToken();
-        }
-    }
-
     public static void printError(int line, int column, String text) {
         SymbolTable st = SymbolTable.getInstance();
         st.setError(true);
         System.out.println("Error at line " + line + ", column " + column + " : " + text);
         System.out.println();
     }
-
-    public static void printParseExc(ParseException pe) {
-        SymbolTable st = SymbolTable.getInstance();
-        st.setError(true);
-        System.out.println(pe.toString().substring(16));
-    }
 }
-
 PARSER_END(PascalSpim)
 
 SKIP: //Whitespace and comments
@@ -2801,4 +2736,28 @@ void caseSequence(CaseStatement s, Type exprType, String scope, String fname) :
 			}
 		}
 	}
+}
+
+JAVACODE
+void error_skipto(int kind, ParseException e) {
+    System.out.println(e.toString());
+    Token t;
+    do {
+        t = getNextToken();
+    } while (t.kind != kind);
+}
+
+JAVACODE
+void error_skipto_before(int kind, ParseException e) {
+    System.out.println(e.toString());
+    while (getToken(1).kind != kind) {
+        getNextToken();
+    }
+}
+
+JAVACODE
+void printParseExc(ParseException pe) {
+    SymbolTable st = SymbolTable.getInstance();
+    st.setError(true);
+    System.out.println(pe.toString().substring(16));
 }

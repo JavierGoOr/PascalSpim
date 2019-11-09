@@ -51,7 +51,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.pascal2spim.PascalSpim</mainClass>
+                            <mainClass>org.pascal2spim.MainApplication</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
