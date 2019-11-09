@@ -13,8 +13,6 @@ import java.io.Reader;
 import java.nio.file.Paths;
 
 public class MainApplication {
-    private static PascalParser ps;
-
     public static void main(String[] args) throws Exception {
         launch(args);
     }
@@ -30,13 +28,10 @@ public class MainApplication {
             file_in = args[0];
             file_out = args[1];
         }
+        PascalParser pascalParser = null;
         try {
             Reader in = new BufferedReader(new FileReader(file_in));
-            if (ps == null) {
-                ps = new PascalParser(in);
-            } else {
-                PascalParser.ReInit(in);
-            }
+            pascalParser = new PascalParser(in);
         } catch (IOException e) {
             System.out.println("Error: file \"" + file_in + "\" cannot be read. Please check whether it exists.");
             return;
@@ -46,7 +41,7 @@ public class MainApplication {
         GeneratedAssembly generatedAssembly = new GeneratedAssembly();
         generatedAssembly.init();
 
-        Program n = PascalParser.programStart();
+        Program n = pascalParser.programStart();
         if (st.getError()) {
             System.out.println("Process finished with errors");
         } else {

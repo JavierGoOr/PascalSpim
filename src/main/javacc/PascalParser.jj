@@ -1,9 +1,7 @@
 // Pascal to SPIM parser. File for JavaCC
-/*options
-{
-  IGNORE_CASE = false;
-  //MULTI = true;
-}*/
+options {
+  STATIC = false;
+}
 
 PARSER_BEGIN(PascalParser)
 package org.pascal2spim.parser;
