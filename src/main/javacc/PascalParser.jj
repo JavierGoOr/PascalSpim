@@ -5,9 +5,10 @@
   //MULTI = true;
 }*/
 
-PARSER_BEGIN(PascalSpim)
-package org.pascal2spim;
+PARSER_BEGIN(PascalParser)
+package org.pascal2spim.parser;
 
+import org.pascal2spim.IntWrapper;
 import org.pascal2spim.language.constants.*;
 import org.pascal2spim.language.expressions.*;
 import org.pascal2spim.language.functions.*;
@@ -30,7 +31,7 @@ import java.io.Reader;
 import java.nio.file.Paths;
 import java.util.Vector;
 
-public class PascalSpim {
+public class PascalParser {
     public static void printError(int line, int column, String text) {
         SymbolTable st = SymbolTable.getInstance();
         st.setError(true);
@@ -38,7 +39,7 @@ public class PascalSpim {
         System.out.println();
     }
 }
-PARSER_END(PascalSpim)
+PARSER_END(PascalParser)
 
 SKIP: //Whitespace and comments
 {
@@ -144,7 +145,7 @@ SKIP:
 {
 	<~[]>	
 	{
-		PascalSpim.printError(input_stream.getBeginLine(), input_stream.getBeginColumn(), "Lexical error: Character not parsed: " + image);
+		PascalParser.printError(input_stream.getBeginLine(), input_stream.getBeginColumn(), "Lexical error: Character not parsed: " + image);
 	}
 }
 

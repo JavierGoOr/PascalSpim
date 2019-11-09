@@ -1,9 +1,9 @@
 package org.pascal2spim.language.constants;
 
-import org.pascal2spim.PascalSpim;
 import org.pascal2spim.language.types.IntegerType;
 import org.pascal2spim.mips32.GeneratedAssembly;
 import org.pascal2spim.mips32.RegisterManager;
+import org.pascal2spim.parser.PascalParser;
 
 public class IntegerConstant extends Constant {
     private int value = 0;
@@ -24,7 +24,7 @@ public class IntegerConstant extends Constant {
         try {
             this.value = Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            PascalSpim.printError(line, column, "number exceeds INTEGER range");
+            PascalParser.printError(line, column, "number exceeds INTEGER range");
         }
     }
 

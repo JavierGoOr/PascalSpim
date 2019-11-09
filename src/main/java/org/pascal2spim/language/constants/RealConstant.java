@@ -1,9 +1,9 @@
 package org.pascal2spim.language.constants;
 
-import org.pascal2spim.PascalSpim;
 import org.pascal2spim.language.types.RealType;
 import org.pascal2spim.mips32.GeneratedAssembly;
 import org.pascal2spim.mips32.RegisterManager;
+import org.pascal2spim.parser.PascalParser;
 
 public class RealConstant extends Constant {
     private double value = 0;
@@ -24,7 +24,7 @@ public class RealConstant extends Constant {
         try {
             this.value = Double.parseDouble(value);
         } catch (NumberFormatException e) {
-            PascalSpim.printError(line, column, "number exceeds REAL range");
+            PascalParser.printError(line, column, "number exceeds REAL range");
         }
     }
 
