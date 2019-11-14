@@ -2,6 +2,7 @@ package org.pascal2spim.language.constants;
 
 import org.pascal2spim.language.types.BooleanType;
 import org.pascal2spim.mips32.GeneratedAssembly;
+import org.pascal2spim.mips32.LoadIntegerInstruction;
 import org.pascal2spim.mips32.RegisterManager;
 
 public class BooleanConstant extends Constant {
@@ -24,19 +25,20 @@ public class BooleanConstant extends Constant {
     }
 
     public String toString() {
-        if (value)
-            return "true";
-        else
-            return "false";
+        return String.valueOf(value);
     }
 
     public void generateCode(GeneratedAssembly generatedAssembly, RegisterManager registerManager) {
-        int boolValue;
         register = registerManager.getFreeRegister(generatedAssembly);
-        if (value)
-            boolValue = 1;
-        else
-            boolValue = 0;
-        generatedAssembly.addCodeLine("li " + register.getName() + ", " + boolValue);
+
+        LoadIntegerInstruction instruction = new LoadIntegerInstruction(register, getIntegerValue());
+        generatedAssembly.addCodeLine(instruction.toAssembly());
+    }
+
+    private int getIntegerValue() {
+        if (value) {
+            return 1;
+        }
+        return 0;
     }
 }
