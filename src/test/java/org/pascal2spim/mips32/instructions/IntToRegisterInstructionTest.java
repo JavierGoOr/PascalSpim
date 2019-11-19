@@ -1,6 +1,7 @@
-package org.pascal2spim.mips32;
+package org.pascal2spim.mips32.instructions;
 
 import org.junit.Test;
+import org.pascal2spim.mips32.Register;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

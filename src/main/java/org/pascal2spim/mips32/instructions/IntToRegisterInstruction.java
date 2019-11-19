@@ -1,6 +1,8 @@
-package org.pascal2spim.mips32;
+package org.pascal2spim.mips32.instructions;
 
-public abstract class IntToRegisterInstruction {
+import org.pascal2spim.mips32.Register;
+
+public abstract class IntToRegisterInstruction implements Instruction {
     private InstructionType type;
     private Register destinationRegister;
     private int constantValue;

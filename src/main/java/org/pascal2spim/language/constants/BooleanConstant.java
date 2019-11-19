@@ -2,8 +2,8 @@ package org.pascal2spim.language.constants;
 
 import org.pascal2spim.language.types.BooleanType;
 import org.pascal2spim.mips32.GeneratedAssembly;
-import org.pascal2spim.mips32.LoadIntegerInstruction;
 import org.pascal2spim.mips32.RegisterManager;
+import org.pascal2spim.mips32.instructions.LoadIntegerInstruction;
 
 public class BooleanConstant extends Constant {
     private boolean value;

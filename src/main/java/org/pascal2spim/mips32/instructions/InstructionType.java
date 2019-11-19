@@ -1,4 +1,4 @@
-package org.pascal2spim.mips32;
+package org.pascal2spim.mips32.instructions;
 
 public enum InstructionType {
     LOAD_IMMEDIATE("li"),
