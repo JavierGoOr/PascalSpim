@@ -3,6 +3,8 @@ package org.pascal2spim.language.constants;
 import org.pascal2spim.language.types.CharType;
 import org.pascal2spim.mips32.GeneratedAssembly;
 import org.pascal2spim.mips32.RegisterManager;
+import org.pascal2spim.parser.PascalParser;
+import org.pascal2spim.parser.Token;
 
 public class CharConstant extends Constant {
     private char value;
@@ -19,7 +21,7 @@ public class CharConstant extends Constant {
         value = val;
     }
 
-    public void storePascalValue(int line, int column, String value) {
+    public void storePascalValue(String value, Token token, PascalParser parser) {
         this.value = value.charAt(1);
     }
 

@@ -1,6 +1,7 @@
 // Pascal to SPIM parser. File for JavaCC
 options {
   STATIC = false;
+  TOKEN_MANAGER_USES_PARSER = true;
 }
 
 PARSER_BEGIN(PascalParser)
@@ -30,7 +31,7 @@ import java.nio.file.Paths;
 import java.util.Vector;
 
 public class PascalParser {
-    public static void printError(int line, int column, String text) {
+    public void printError(int line, int column, String text) {
         SymbolTable st = SymbolTable.getInstance();
         st.setError(true);
         System.out.println("Error at line " + line + ", column " + column + " : " + text);
@@ -143,7 +144,7 @@ SKIP:
 {
 	<~[]>	
 	{
-		PascalParser.printError(input_stream.getBeginLine(), input_stream.getBeginColumn(), "Lexical error: Character not parsed: " + image);
+		parser.printError(input_stream.getBeginLine(), input_stream.getBeginColumn(), "Lexical error: Character not parsed: " + image);
 	}
 }
 
@@ -921,9 +922,9 @@ Constant constant(String scope, IntWrapper line, IntWrapper column) :
 		if(!identifier && !error)
 		{	
 			if(sign == null) 
-				c.storePascalValue(t.beginLine, t.beginColumn, t.image);
+				c.storePascalValue(t.image, t, this);
 			else
-				c.storePascalValue(sign.beginLine, sign.beginColumn, sign.image + t.image);
+				c.storePascalValue(sign.image + t.image, sign, this);
 		}
 	  	if(error)
 			return null;
@@ -957,7 +958,7 @@ Constant uns_constant(String scope) :
 		{ c = new BooleanConstant(); }
 	)
 	{
-		c.storePascalValue(t.beginLine, t.beginColumn, t.image);
+		c.storePascalValue(t.image, t, this);
 		return c;
 	}
 }

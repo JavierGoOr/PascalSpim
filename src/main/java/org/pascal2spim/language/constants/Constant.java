@@ -2,6 +2,8 @@ package org.pascal2spim.language.constants;
 
 import org.pascal2spim.language.expressions.FactorObject;
 import org.pascal2spim.language.types.Type;
+import org.pascal2spim.parser.PascalParser;
+import org.pascal2spim.parser.Token;
 import org.pascal2spim.symboltable.SymbolTableObject;
 
 public abstract class Constant extends FactorObject implements SymbolTableObject {
@@ -11,7 +13,7 @@ public abstract class Constant extends FactorObject implements SymbolTableObject
         this.type = type;
     }
 
-    abstract public void storePascalValue(int line, int column, String value);
+    abstract public void storePascalValue(String value, Token token, PascalParser parser);
 
     public Type getType() {
         return type;
